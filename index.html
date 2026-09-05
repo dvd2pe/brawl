@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brawl Hero Studio</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <header class="app-header">
+        <h1>🎮 Brawl Hero Studio</h1>
+        <div class="header-status" id="bootStatus">Caricamento…</div>
+        <div class="header-actions">
+            <button id="btnPlayVanilla" title="Gioco originale senza modifiche">▶ Gioco originale</button>
+        </div>
+    </header>
+
+    <div id="setupOverlay" class="setup-overlay hidden">
+        <div class="setup-box">
+            <h2>Serve un server locale</h2>
+            <p>Lo Studio legge <code>../game.js</code> e le texture: con <code>file://</code> il browser blocca fetch e canvas.</p>
+            <pre>cd brawl-hero
+python -m http.server 8020</pre>
+            <p>Poi apri <a href="http://localhost:8020/brawl-hero-studio/">http://localhost:8020/brawl-hero-studio/</a></p>
+        </div>
+    </div>
+
+    <nav class="main-nav">
+        <button class="nav-btn active" data-tab="tab-sprite">🖼️ Sprite</button>
+        <button class="nav-btn" data-tab="tab-mappe">🗺️ Mappe</button>
+        <button class="nav-btn" data-tab="tab-assets">📦 Asset &amp; Gioca</button>
+    </nav>
+
+    <main class="main-content">
+
+        <!-- ============ SPRITE ============ -->
+        <section id="tab-sprite" class="tab-content active">
+            <aside class="panel sprite-list">
+                <input type="search" id="spriteSearch" placeholder="cerca sprite…">
+                <div id="spriteTree" class="sprite-tree"></div>
+            </aside>
+            <div class="panel sprite-view">
+                <div class="toolbar">
+                    <label>Zoom
+                        <select id="spriteZoom">
+                            <option value="1">1×</option><option value="2">2×</option>
+                            <option value="3" selected>3×</option><option value="5">5×</option><option value="8">8×</option>
+                        </select>
+                    </label>
+                    <button id="editSpriteBtn" class="primary">✏️ Modifica pixel</button>
+                    <button id="downloadSpriteBtn">⬇ PNG</button>
+                </div>
+                <div class="preview-wrap">
+                    <canvas id="spritePreview" width="300" height="200"></canvas>
+                </div>
+                <div id="spritePlayBar" class="playbar" style="display:none">
+                    <span>anteprima animazione (frame 0–n) attiva</span>
+                </div>
+                <div id="spriteInfo" class="info"></div>
+            </div>
+        </section>
+
+        <!-- ============ MAPPE ============ -->
+        <section id="tab-mappe" class="tab-content">
+            <div class="map-toolbar">
+                <div class="tool-group">
+                    <button data-tool="wall" id="mapToolApply" class="tool-btn">🧱 Muro</button>
+                    <button data-tool="water" id="mapToolWater" class="tool-btn">💧 Acqua</button>
+                    <button data-tool="ditch" id="mapToolDitch" class="tool-btn">🕳️ Fossa</button>
+                    <button data-tool="spike" id="mapToolSpike" class="tool-btn">🔺 Spuntoni</button>
+                    <button data-enemy="EntitySlime" class="tool-btn">🟢 Slime</button>
+                    <button data-enemy="EntityMushroom" class="tool-btn">🍄 Mushroom</button>
+                    <button data-enemy="EntityBowldog" class="tool-btn">🐕 Bowldog</button>
+                    <button data-enemy="EntityCactus" class="tool-btn">🌵 Cactus</button>
+                    <button data-enemy="EntityDrone" class="tool-btn">🚁 Drone</button>
+                    <button data-tool="marker:P" id="mapToolPlayer" class="tool-btn">🧑 Player</button>
+                    <button data-tool="marker:B" id="mapToolBoss" class="tool-btn">👑 Boss</button>
+                    <button data-tool="marker:E" id="mapToolRandom" class="tool-btn">❓ Random</button>
+                    <button data-tool="erase" class="tool-btn">🧽 Gomma</button>
+                </div>
+                <div class="tool-group">
+                    <button id="mapUndo">↶</button><button id="mapRedo">↷</button>
+                    <label class="chk"><input type="checkbox" id="mapGrid" checked> griglia</label>
+                </div>
+                <div class="tool-group">
+                    <select id="mapLoadSelect"><option value="">— carica mappa di gioco (68) —</option></select>
+                    <select id="mapProjectSelect"><option value="">— mappe del progetto —</option></select>
+                    <button id="mapNew">✚ Nuova</button>
+                    <button id="mapSaveProject">💾 Salva</button>
+                    <input id="mapId" placeholder="id mappa (es. easy-custom-1)" />
+                    <button id="mapTest" class="primary">▶ Test nel gioco</button>
+                </div>
+            </div>
+            <div class="map-workspace">
+                <div class="map-canvas-wrap panel">
+                    <canvas id="mapCanvas"></canvas>
+                    <div class="map-footer">
+                        <span id="mapCursor"></span>
+                        <span id="mapStats"></span>
+                    </div>
+                </div>
+                <aside class="panel map-side">
+                    <h3>Validazione</h3>
+                    <div id="mapValidation" class="validation"><span class="muted">Premi «Valida» dopo le modifiche</span></div>
+                    <button id="mapValidate">Valida mappa</button>
+                    <h3>Come funziona</h3>
+                    <ul class="hint">
+                        <li>Muro = cella <code>tiles=1</code> + entità <code>EntityWall</code> (come le mappe reali)</li>
+                        <li>Acqua/Fossa = solo griglia: il gioco le «cuce» con l'autotiling</li>
+                        <li>Il portale è generato automaticamente in basso al centro</li>
+                        <li>P = spawn player · B = boss · E = nemico random</li>
+                    </ul>
+                </aside>
+            </div>
+        </section>
+
+        <!-- ============ ASSET & GIOCA ============ -->
+        <section id="tab-assets" class="tab-content">
+            <div class="assets-grid">
+                <div class="panel">
+                    <h3>✚ Nuova sprite</h3>
+                    <label>Nome <input id="newSpriteName" placeholder="mia-creazione"></label>
+                    <label>Larghezza frame <input id="newSpriteW" type="number" value="80" min="1"></label>
+                    <label>Altezza frame <input id="newSpriteH" type="number" value="80" min="1"></label>
+                    <label>Numero frame <input id="newSpriteFrames" type="number" value="4" min="1" max="32"></label>
+                    <button id="newSpriteBtn" class="primary">Crea e disegna</button>
+                    <p class="hint">Le sprite nuove vengono aggiunte a texture-2 (repack) e sono subito visibili nel gioco patchato.</p>
+                </div>
+                <div class="panel">
+                    <h3>🎭 Skin entità</h3>
+                    <p class="hint">Sostituisci la grafica di una classe di gioco con una sprite dell'atlante (anche una tua).</p>
+                    <label>Classe <select id="skinClass"></select></label>
+                    <label>Slot <select id="skinProp"></select></label>
+                    <label>Sprite sorgente <select id="skinSource"></select></label>
+                    <button id="skinApplyBtn" class="primary">Applica skin</button>
+                </div>
+                <div class="panel">
+                    <h3>▶ Gioca</h3>
+                    <label>Mappa
+                        <select id="playMapSelect"></select>
+                    </label>
+                    <div class="row">
+                        <button id="playModsBtn" class="primary">▶ Gioca con le modifiche</button>
+                        <button id="playDebugBtn">🔧 Con box debug</button>
+                    </div>
+                    <p class="hint">«Gioco originale» (in alto) parte senza nessuna patch.</p>
+                    <h3>Stato patch</h3>
+                    <div id="patchStatus" class="validation"></div>
+                    <button id="clearPatchesBtn">🗑️ Rimuovi tutte le patch</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============ PIXEL EDITOR OVERLAY ============ -->
+    <div id="pixelOverlay" class="overlay">
+        <div class="overlay-box">
+            <div class="overlay-head">
+                <b id="pixelTitle">Editor pixel</b>
+                <span id="pixelPath" class="muted"></span>
+                <button id="pixelClose">✕</button>
+            </div>
+            <div class="overlay-toolbar">
+                <button class="tool-btn active" data-tool="pencil">✏️</button>
+                <button class="tool-btn" data-tool="eraser">🧽</button>
+                <button class="tool-btn" data-tool="bucket">🪣</button>
+                <button class="tool-btn" data-tool="picker">💧</button>
+                <input type="color" id="pixelColor" value="#ff0044">
+                <div id="pixelPalette" class="palette"></div>
+                <label class="chk"><input type="checkbox" id="pixelGrid" checked> griglia</label>
+                <label>Zoom
+                    <select id="pixelZoom">
+                        <option value="4">4×</option><option value="8" selected>8×</option>
+                        <option value="12">12×</option><option value="16">16×</option>
+                    </select>
+                </label>
+                <span id="pixelPos" class="muted"></span>
+                <button id="pixelUndo">↶ Undo</button>
+                <span class="spacer"></span>
+                <label class="btn-file">⬆ Importa PNG<input type="file" id="pixelImport" accept="image/*" hidden></label>
+                <button id="pixelDownload">⬇ PNG</button>
+                <button id="pixelSave" class="primary">💾 Salva</button>
+            </div>
+            <div class="overlay-canvas-wrap">
+                <canvas id="pixelCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/gameData.js"></script>
+    <script src="js/playStudio.js"></script>
+    <script src="js/spriteExplorer.js"></script>
+    <script src="js/pixelEditor.js"></script>
+    <script src="js/mapEditor.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

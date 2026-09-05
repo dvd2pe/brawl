@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project files
+*.json
+!README.md
+
+# User uploads
+assets/uploads/
+
+# Temporary files
+*.tmp
+*.temp
