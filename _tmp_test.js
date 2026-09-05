@@ -1,0 +1,25 @@
+const fs = require('fs');
+// Test di parsing del gameData senza DOM: stub minimi
+global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+global.document = { createElement: () => ({ getContext: () => ({ drawImage: () => {} }) }) };
+global.window = global;
+const src = fs.readFileSync('game.js', 'utf8');
+global.fetch = (u) => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(src) });
+const code = fs.readFileSync('brawl-hero-studio/js/gameData.js', 'utf8');
+eval(code);
+GameData._parsePacker();
+console.log('textures:', GameData.packer.textures.join(','));
+GameData._parseMaps();
+const total = Object.values(GameData.mapBuckets).reduce((a, b) => a + b.length, 0);
+console.log('mappe:', GameData.maps.length, '| buckets:', JSON.stringify(Object.fromEntries(Object.entries(GameData.mapBuckets).map(([k, v]) => [k, v.length]))), '| totali in bucket:', total);
+const t1 = GameData.maps.find(m => m.id === 'tutorial-1');
+console.log('tutorial-1 tiles 12x24?', t1.tiles.length === 24 && t1.tiles[0].length === 12, '| env:', t1.environments.length, '| enemies:', (t1.enemies || []).length, '| markers:', JSON.stringify((t1.markers || []).map(m => m.label)));
+GameData._parseSheets();
+console.log('sheets:', GameData.sheets.length, 'es. slime:', JSON.stringify(GameData.sheets.filter(s => s.path.includes('slime')).slice(0, 2)));
+console.log('anims:', GameData.anims.length, 'es.:', JSON.stringify(GameData.anims.find(a => a.cls === 'EntitySlime' && a.name === 'idle' && a.dir === 'bottomLeft')));
+GameData._parseTileData();
+console.log('tileset:', GameData.tileset.tileSize, GameData.tileset.subTileSize, '| tileTypes:', JSON.stringify(GameData.tileTypes));
+GameData._buildEntityCatalog();
+console.log('catalogo entità:', GameData.entities.map(e => e.entity).join(','));
+const c = GameData.convertTile(t1.tiles, 0, 0);
+console.log('convertTile(0,0) type:', c.type, 'bg[4]:', c.background && c.background[4]);
