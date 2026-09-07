@@ -24,8 +24,11 @@ const AIGenerator = {
 
   HISTORY_KEY: 'bhs_ai_history',
 
-  // ---- chiamata API (con gestione errori robusta: HTML → JSON parse error friendly)
-  async generate(prompt, size = '1024x1024') {
+  // ---- chiamata API ASYNC (pattern: POST start job → GET poll status)
+  // Evita timeout del proxy perché ogni richiesta HTTP è veloce (< 1s)
+  // Usa il route Next.js su :3000 (Caddy proxya :81 → :3000 di default)
+  async generate(prompt, size = '1024x1024', onProgress) {
+    // 1. POST start job (immediato, ~10ms)
     let r;
     try {
       r = await fetch('/api/generate-sprite', {
@@ -34,22 +37,52 @@ const AIGenerator = {
         body: JSON.stringify({ prompt, size }),
       });
     } catch (e) {
-      throw new Error('Errore di rete: ' + e.message);
+      throw new Error('Errore di rete (POST): ' + e.message);
     }
-    // controlla content-type: se non è JSON, è una pagina di errore HTML (es. timeout proxy)
     const ct = r.headers.get('content-type') || '';
     if (!ct.includes('application/json')) {
-      // leggi come testo per capire cos'è
-      const text = await r.text();
-      throw new Error('Il server ha risposto con ' + r.status + ' (' + ct + '), non JSON. Probabilmente il proxy è scaduto (timeout 30-60s). L\'AI impiega 60-90s. Riprova tra poco, oppure usa il bottone "Genera PNG sul disco" come fallback.');
+      throw new Error('Il server ha risposto con ' + r.status + ' (' + ct + '). Il route AI non è raggiungibile.');
     }
-    let data;
-    try { data = await r.json(); }
-    catch (e) {
-      throw new Error('Risposta non valida JSON: ' + e.message);
+    const startData = await r.json();
+    if (!startData.success || !startData.jobId) {
+      throw new Error(startData.error || 'Impossibile avviare la generazione');
     }
-    if (!data.success) throw new Error(data.error || 'Generazione fallita');
-    return data; // { success, base64, prompt, size }
+    const jobId = startData.jobId;
+    if (onProgress) onProgress('Job avviato: ' + jobId.slice(0, 16) + '...');
+
+    // 2. Poll GET status ogni 3 secondi
+    const pollInterval = 3000;
+    const maxWait = 180000; // 3 minuti max
+    const t0 = Date.now();
+    while (Date.now() - t0 < maxWait) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+      let pr;
+      try {
+        pr = await fetch('/api/generate-status?jobId=' + encodeURIComponent(jobId));
+      } catch (e) {
+        if (onProgress) onProgress('Retry poll (errore rete)...');
+        continue;
+      }
+      const pct = pr.headers.get('content-type') || '';
+      if (!pct.includes('application/json')) {
+        if (onProgress) onProgress('Retry poll (risposta non JSON)...');
+        continue;
+      }
+      const data = await pr.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Errore polling');
+      }
+      if (data.status === 'done') {
+        if (onProgress) onProgress('✓ Generata in ' + data.elapsed);
+        return { success: true, base64: data.base64, prompt, size };
+      }
+      if (data.status === 'error') {
+        throw new Error(data.error || 'Generazione fallita');
+      }
+      // pending: continua a pollare
+      if (onProgress) onProgress('In corso... ' + data.elapsed);
+    }
+    throw new Error('Timeout: generazione troppo lunga (> 3 minuti)');
   },
 
   // ---- history in localStorage

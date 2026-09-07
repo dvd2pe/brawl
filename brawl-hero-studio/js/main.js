@@ -226,11 +226,14 @@ const App = {
       const prompt = $('aiPrompt').value.trim();
       if (!prompt) { alert('Scrivi un prompt prima'); return; }
       const size = $('aiSize').value;
-      $('aiStatus').textContent = '⏳ Generazione in corso... (può richiedere 10-30 secondi)';
+      $('aiStatus').textContent = '⏳ Avvio generazione...';
       $('aiActions').style.display = 'none';
       $('aiPreview').innerHTML = '';
+      $('aiGenBtn').disabled = true;
       try {
-        const result = await AIGenerator.generate(prompt, size);
+        const result = await AIGenerator.generate(prompt, size, (msg) => {
+          $('aiStatus').textContent = '⏳ ' + msg;
+        });
         // salva prompt in history
         AIGenerator.addHistory(prompt, tplSel.value);
         // mostra preview
@@ -254,6 +257,7 @@ const App = {
       } catch (e) {
         $('aiStatus').textContent = '✗ Errore: ' + e.message;
       }
+      $('aiGenBtn').disabled = false;
       this.refreshHistory();
     });
     // azioni post-generazione
