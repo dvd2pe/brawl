@@ -204,13 +204,21 @@ const GameData = {
 
   // ------------------------------------------------------------- utility sprite
   frameFor(path) {
+    // 0. Se è una custom addition con canvas cached, ritorna subito un frame fittizio
+    // (il rendering usa _additionCanvases direttamente, non l'atlante)
+    if (this._additionCanvases[path]) {
+      const cnv = this._additionCanvases[path];
+      return { texIndex: -1, texture: 'custom', frame: { x: 0, y: 0, w: cnv.width, h: cnv.height } };
+    }
     // 1. cerca nelle patch (custom additions e texture repack)
     try {
       const p = JSON.parse(localStorage.getItem('bhs_patches') || '{}');
-      if (p.textureJSON && p.additions) {
-        for (const add of p.additions) {
-          if (add.path === path) {
-            // trova la regione nel textureJSON patchato (chiavi = 'texture-2' etc.)
+      if (p.additions) {
+        // anche se textureJSON è vuoto, se la path è nelle additions la sprite esiste
+        const isAddition = p.additions.some(a => a.path === path);
+        if (isAddition) {
+          // cerca nel textureJSON se presente
+          if (p.textureJSON) {
             for (const texName in p.textureJSON) {
               try {
                 const j = JSON.parse(p.textureJSON[texName] || '{}');
@@ -219,6 +227,9 @@ const GameData = {
               } catch (e) {}
             }
           }
+          // se non c'è nel textureJSON ma è nelle additions, ritorna un frame fittizio
+          // (verrà caricato on-demand via _loadAdditionCanvas)
+          return { texIndex: -1, texture: 'custom', frame: { x: 0, y: 0, w: 0, h: 0 } };
         }
       }
     } catch (e) {}

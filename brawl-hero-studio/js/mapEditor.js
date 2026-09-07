@@ -358,14 +358,17 @@ const MapEditor = {
         // entità custom: cerca la definizione
         const customDef = customs.find(c => c.className === env.entity);
         if (customDef) {
-          // disegna dalla sprite addition
-          const fd = GameData.frameFor(customDef.spritePath);
-          if (fd) {
+          // se il canvas non è ancora cached, caricalo e poi re-renderizza
+          if (!GameData._additionCanvases[customDef.spritePath]) {
+            GameData._loadAdditionCanvas(customDef.spritePath).then(() => this.render()).catch(() => {});
+          }
+          // disegna dalla sprite addition (usa _additionCanvases se cached, altrimenti fallback magenta)
+          if (GameData._additionCanvases[customDef.spritePath]) {
             const w = customDef.w, h = customDef.h;
             const dy = customDef.baseClass === 'EntityWall' ? env.y * S - (h - S) : env.y * S;
             draws.push({ y: env.y, z: customDef.baseClass === 'EntitySpike' ? -1 : 2, draw: () => GameData.drawRegion(ctx, customDef.spritePath, env.x * S + (S - w) / 2, dy) });
           } else {
-            // fallback: quadrato magenta
+            // fallback: quadrato magenta (verrà sostituito quando il canvas si carica)
             draws.push({ y: env.y, z: 0, draw: () => { ctx.fillStyle = '#ff00ff'; ctx.fillRect(env.x * S + 5, env.y * S + 5, S - 10, S - 10); } });
           }
         }
@@ -378,8 +381,11 @@ const MapEditor = {
       if (sh && sh.path) {
         draws.push({ y: en.y, z: 1, draw: () => GameData.drawRegion(ctx, sh.path, en.x * S + (S - sh.w) / 2, en.y * S + S - sh.h + 8, { frameW: sh.w, frameH: sh.h }) });
       } else if (customDef) {
-        const fd = GameData.frameFor(customDef.spritePath);
-        if (fd) {
+        // se il canvas non è ancora cached, caricalo e poi re-renderizza
+        if (!GameData._additionCanvases[customDef.spritePath]) {
+          GameData._loadAdditionCanvas(customDef.spritePath).then(() => this.render()).catch(() => {});
+        }
+        if (GameData._additionCanvases[customDef.spritePath]) {
           const w = customDef.w, h = customDef.h;
           draws.push({ y: en.y, z: 1, draw: () => GameData.drawRegion(ctx, customDef.spritePath, en.x * S + (S - w) / 2, en.y * S + S - h + 8, { frameW: w, frameH: h }) });
         } else {

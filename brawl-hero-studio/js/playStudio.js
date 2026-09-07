@@ -43,7 +43,30 @@ const PlayStudio = {
     p.additions = (p.additions || []).filter(a => a.path !== spritePath);
     p.additions.push({ path: spritePath, data: dataURL });
     this.savePatches(p);
+    // CRITICAL: carica il canvas dell'addition e fai il repack per aggiornare textureJSON
+    // (altrimenti frameFor() non trova la sprite e il rendering fallisce)
+    this._loadAdditionCanvasForRepack(spritePath, dataURL);
     return { className, spritePath };
+  },
+
+  // Carica il canvas da un dataURL e lo mette sia in additionCanvases (per il repack)
+  // sia in GameData._additionCanvases (per il rendering diretto nel mapEditor)
+  _loadAdditionCanvasForRepack(spritePath, dataURL) {
+    const img = new Image();
+    img.onload = () => {
+      const cnv = document.createElement('canvas');
+      cnv.width = img.naturalWidth; cnv.height = img.naturalHeight;
+      cnv.getContext('2d').drawImage(img, 0, 0);
+      // Salva in entrambi i cache
+      this.additionCanvases.set(spritePath, cnv);
+      if (window.GameData) GameData._additionCanvases[spritePath] = cnv;
+      // Ora fai il repack per aggiornare textureJSON
+      this.repackTexture2();
+      // Forza re-render del mapEditor se aperto
+      if (window.MapEditor && MapEditor.map) MapEditor.render();
+      if (window.SpriteExplorer) SpriteExplorer.renderTree('');
+    };
+    img.src = dataURL;
   },
 
   removeCustomClass(className) {
