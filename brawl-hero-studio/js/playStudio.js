@@ -146,18 +146,66 @@ const PlayStudio = {
   },
 
   // ------------------------------------------------------------- comando play
+  // Apre studio-play.html per giocare la mappa con le patch applicate.
+  // Usa un link diretto (non window.open) per evitare il blocco popup.
+  // Crea un link temporaneo e clickalo — funziona anche dentro iframe.
   playCustomMap(map) {
     localStorage.setItem(this.PLAY_KEY, JSON.stringify({ type: 'custom', map }));
-    window.open('../studio-play.html', '_blank');
+    this._openPlayUrl('../studio-play.html');
   },
   playBuiltin(id) {
     localStorage.setItem(this.PLAY_KEY, JSON.stringify({ type: 'builtin', id }));
-    window.open('../studio-play.html', '_blank');
+    this._openPlayUrl('../studio-play.html');
   },
-  playVanilla() { window.open('../vanilla.html', '_blank'); },
+  playVanilla() { this._openPlayUrl('../vanilla.html'); },
   playDebug(id) {
     localStorage.setItem(this.PLAY_KEY, JSON.stringify({ type: 'builtin', id }));
-    window.open('../studio-play.html?debug=true', '_blank');
+    this._openPlayUrl('../studio-play.html?debug=true');
+  },
+
+  // Apre un URL in una nuova tab. Primo tentativo: window.open (popup).
+  // Se bloccato (ritorna null), fallback: crea link con target=_blank e click programmato.
+  // Se anche quello fallisce (iframe sandbox), mostra un link manuale all'utente.
+  _openPlayUrl(relativeUrl) {
+    const fullUrl = new URL(relativeUrl, window.location.href).href;
+    // Tentativo 1: window.open
+    let popup = null;
+    try { popup = window.open(fullUrl, '_blank'); } catch (e) {}
+    if (popup && !popup.closed) {
+      try { popup.focus(); } catch (e) {}
+      return;
+    }
+    // Tentativo 2: link con target=_blank
+    try {
+      const a = document.createElement('a');
+      a.href = fullUrl;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    } catch (e) {}
+    // Tentativo 3: link manuale (l'utente clicca)
+    this._showManualLink(fullUrl);
+  },
+
+  _showManualLink(url) {
+    // Rimuovi eventuale messaggio precedente
+    const old = document.getElementById('playLinkOverlay');
+    if (old) old.remove();
+    const div = document.createElement('div');
+    div.id = 'playLinkOverlay';
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000c;z-index:1000;display:flex;align-items:center;justify-content:center';
+    div.innerHTML = '<div style="background:#1a1a26;border:1px solid #2f6fed;border-radius:12px;padding:32px;max-width:480px;text-align:center;color:#e8e8f0;font-family:system-ui">' +
+      '<h2 style="color:#fff;margin:0 0 12px;font-size:20px">▶ Apri il gioco</h2>' +
+      '<p style="color:#9aa0b8;margin:0 0 16px;font-size:14px">Il browser ha bloccato il popup. Clicca il bottone per aprire il gioco in una nuova tab:</p>' +
+      '<a href="' + url + '" target="_blank" rel="noopener" style="display:inline-block;background:#2f6fed;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">▶ Gioca ora</a>' +
+      '<p style="color:#666;margin:16px 0 0;font-size:11px;font-family:monospace">' + url + '</p>' +
+      '<button id="closePlayLink" style="margin-top:16px;background:#23232f;color:#aaa;border:1px solid #34344a;padding:6px 14px;border-radius:6px;cursor:pointer">Chiudi</button>' +
+    '</div>';
+    document.body.appendChild(div);
+    document.getElementById('closePlayLink').addEventListener('click', () => div.remove());
   },
 
   // ------------------------------------------------------------- UI stato

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Firepit Animato — Brawl Hero Studio</title>
+<style>
+body { font-family: system-ui; background: #14141d; color: #e8e8f0; margin: 0; padding: 40px; }
+h1 { color: #fff; margin-bottom: 8px; }
+.sub { color: #9aa0b8; margin-bottom: 24px; font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.card { background: #1a1a26; border: 1px solid #2c2c40; border-radius: 10px; padding: 16px; }
+.card h3 { margin: 0 0 4px; color: #55c97a; font-size: 16px; }
+.card .meta { color: #888; font-size: 12px; margin-bottom: 12px; }
+.card .anim { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+.card canvas, .card img { image-rendering: pixelated; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px; border-radius: 4px; }
+.card .prompt { color: #aab; font-size: 12px; margin-top: 8px; font-family: monospace; }
+.tag { display: inline-block; background: #2f6fed33; color: #6fb3ff; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+</style>
+</head>
+<body>
+<h1>🔥 Firepit Animato</h1>
+<div class="sub">Firepit con 4 frame di animazione (fiamme che oscillano), generato in pixel art coerente con Brawl Hero. Dimensioni: 60×60 per frame, sheet 240×60.</div>
+<div class="grid">
+  <div class="card">
+    <h3>Sheet completo (240×60)<span class="tag">4 frame</span></h3>
+    <div class="meta">Per il Frame Editor e la custom class</div>
+    <img src="/ai-test/firepit-animated/firepit-animated-sheet.png" alt="sheet" style="width: 100%; max-width: 480px;">
+    <div class="prompt">firepit-animated-sheet.png · 240×60px · 951 bytes</div>
+  </div>
+  <div class="card">
+    <h3>Frame 0 — fiamme basse</h3>
+    <div class="meta">60×60px</div>
+    <canvas id="frame0" width="60" height="60" style="width: 120px; height: 120px;"></canvas>
+    <div class="prompt">frame-0.png</div>
+  </div>
+  <div class="card">
+    <h3>Frame 1 — fiamme crescenti</h3>
+    <div class="meta">60×60px</div>
+    <canvas id="frame1" width="60" height="60" style="width: 120px; height: 120px;"></canvas>
+    <div class="prompt">frame-1.png</div>
+  </div>
+  <div class="card">
+    <h3>Frame 2 — fiamme al picco</h3>
+    <div class="meta">60×60px</div>
+    <canvas id="frame2" width="60" height="60" style="width: 120px; height: 120px;"></canvas>
+    <div class="prompt">frame-2.png</div>
+  </div>
+  <div class="card">
+    <h3>Frame 3 — fiamme calanti</h3>
+    <div class="meta">60×60px</div>
+    <canvas id="frame3" width="60" height="60" style="width: 120px; height: 120px;"></canvas>
+    <div class="prompt">frame-3.png</div>
+  </div>
+  <div class="card">
+    <h3>Animazione (loop 6fps)</h3>
+    <div class="meta">Anteprima come nel gioco</div>
+    <canvas id="animCanvas" width="60" height="60" style="width: 180px; height: 180px;"></canvas>
+    <div class="prompt">Loop: 0 → 1 → 2 → 3 → 0</div>
+  </div>
+</div>
+<script>
+// Disegna i frame dai file PNG
+['frame0', 'frame1', 'frame2', 'frame3'].forEach((id, i) => {
+  const cv = document.getElementById(id);
+  const ctx = cv.getContext('2d');
+  const img = new Image();
+  img.onload = () => { ctx.drawImage(img, 0, 0); };
+  img.src = '/ai-test/firepit-animated/frame-' + i + '.png';
+});
+
+// Animazione loop
+const animCv = document.getElementById('animCanvas');
+const animCtx = animCv.getContext('2d');
+const frames = [];
+let currentFrame = 0;
+for (let i = 0; i < 4; i++) {
+  const img = new Image();
+  img.onload = () => { frames[i] = img; if (i === 0) drawFrame(); };
+  img.src = '/ai-test/firepit-animated/frame-' + i + '.png';
+}
+function drawFrame() {
+  animCtx.clearRect(0, 0, 60, 60);
+  if (frames[currentFrame]) animCtx.drawImage(frames[currentFrame], 0, 0);
+  currentFrame = (currentFrame + 1) % 4;
+}
+setInterval(drawFrame, 167); // 6fps
+</script>
+<p style="margin-top: 30px; color: #9aa0b8; font-size: 13px;">
+File: <code>/home/z/my-project/download/firepit-animated/</code><br>
+Sheet per custom class: <code>firepit-animated-sheet.png</code> (240×60, 4 frame × 60×60)<br>
+Single frames: <code>frame-0.png</code> .. <code>frame-3.png</code><br><br>
+<a href="/ai-gallery.html" style="color: #2f6fed; text-decoration: none">← AI Gallery</a> · <a href="/studio/" style="color: #2f6fed; text-decoration: none">← Studio</a>
+</p>
+</body>
+</html>
