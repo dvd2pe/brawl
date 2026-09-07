@@ -180,6 +180,53 @@
             });
         }
 
+        // --- 2b. Entità custom: crea sottoclassi delle entità base con animSheet dal PNG caricato
+        // Viene eseguito dopo il parse di game.js (ig.AnimationSheet disponibile)
+        if (patches.customClasses && window.ig && ig.AnimationSheet) {
+            patches.customClasses.forEach(function (c) {
+                var baseCls = window[c.baseClass];
+                if (!baseCls || !baseCls.extend) { console.warn('[Studio] classe base sconosciuta:', c.baseClass); return; }
+                if (window[c.className]) { console.log('[Studio] classe custom già esistente:', c.className); return; }
+                try {
+                    // per entità wall/spike: usa animSheet singolo
+                    // per nemici (Slime, ecc.): serve animSheet_down etc.
+                    var sheet = new ig.AnimationSheet(c.data, c.w, c.h);
+                    var proto = { animSheet: sheet };
+                    // se la base ha animSheet_down, copia per tutti i suoi slot
+                    var baseProto = baseCls.prototype;
+                    if (baseProto && baseProto.animSheet_down) {
+                        proto.animSheet_down = sheet;
+                        proto.animSheet_up = sheet;
+                        proto.animSheet_topLeft = sheet;
+                        proto.animSheet_topRight = sheet;
+                        proto.animSheet_bottomLeft = sheet;
+                        proto.animSheet_bottomRight = sheet;
+                    }
+                    window[c.className] = baseCls.extend(proto);
+                    console.log('[Studio] entità custom registrata:', c.className, 'extends', c.baseClass);
+                } catch (e) { console.warn('[Studio] creazione classe custom fallita:', c.className, e); }
+            });
+        }
+
+        // --- 2c. Colori: override del colore di sfondo arena
+        if (patches.colors && patches.colors.arena) {
+            var colorApplied = false;
+            function applyColors() {
+                if (colorApplied) return true;
+                // Cerca l'oggetto _TILESET del gioco
+                if (window._TILESET) {
+                    window._TILESET.backgroundColor = patches.colors.arena;
+                    colorApplied = true;
+                    console.log('[Studio] colore arena applicato:', patches.colors.arena);
+                }
+                return colorApplied;
+            }
+            // prova subito e poi ad ogni tick del timer
+            applyColors();
+            // hook anche nell'interval sotto
+            window.__studioApplyColors = applyColors;
+        }
+
         // --- 3. Texture sostituite (dataURL) appena l'engine crea gli AtlasImage
         function swapTextures() {
             var names = Object.keys(patches.textures || {});
@@ -233,6 +280,7 @@
         var started = false;
         var timer = setInterval(function () {
             if (!started) {
+                if (window.__studioApplyColors) window.__studioApplyColors();
                 if (swapTextures()) { /* tutte le texture sostituibili sono programmate */ }
                 if (window.ig && ig.game && ig.game.playerData) started = true;
             }

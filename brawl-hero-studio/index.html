@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brawl Hero Studio</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <header class="app-header">
+        <h1>🎮 Brawl Hero Studio</h1>
+        <div class="header-status" id="bootStatus">Caricamento…</div>
+        <div class="header-actions">
+            <button id="btnPlayVanilla" title="Gioco originale senza modifiche">▶ Gioco originale</button>
+        </div>
+    </header>
+
+    <div id="setupOverlay" class="setup-overlay hidden">
+        <div class="setup-box">
+            <h2>Errore di caricamento</h2>
+            <p>Lo Studio non è riuscito a leggere <code>../game.js</code> o le texture. Controlla la console del browser.</p>
+        </div>
+    </div>
+
+    <nav class="main-nav">
+        <button class="nav-btn active" data-tab="tab-sprite">🖼️ Sprite</button>
+        <button class="nav-btn" data-tab="tab-mappe">🗺️ Mappe</button>
+        <button class="nav-btn" data-tab="tab-assets">📦 Asset &amp; Gioca</button>
+    </nav>
+
+    <main class="main-content">
+
+        <!-- ============ SPRITE ============ -->
+        <section id="tab-sprite" class="tab-content active">
+            <aside class="panel sprite-list">
+                <input type="search" id="spriteSearch" placeholder="cerca sprite…">
+                <div id="spriteTree" class="sprite-tree"></div>
+            </aside>
+            <div class="panel sprite-view">
+                <div class="toolbar">
+                    <label>Zoom
+                        <select id="spriteZoom">
+                            <option value="1">1×</option><option value="2">2×</option>
+                            <option value="3" selected>3×</option><option value="5">5×</option><option value="8">8×</option>
+                        </select>
+                    </label>
+                    <label>Frame W
+                        <input type="number" id="spriteFrameW" min="0" max="2048" placeholder="auto" style="width:70px">
+                    </label>
+                    <label>Frame H
+                        <input type="number" id="spriteFrameH" min="0" max="2048" placeholder="auto" style="width:70px">
+                    </label>
+                    <button id="spritePlayBtn" title="Avvia/Ferma animazione">▶ Animazione</button>
+                    <button id="spriteStopBtn" title="Stop">⏸</button>
+                    <button id="editSpriteBtn" class="primary">✏️ Modifica pixel</button>
+                    <button id="editFramesBtn" class="primary">✂️ Editor frame</button>
+                    <button id="downloadSpriteBtn">⬇ PNG</button>
+                </div>
+                <div class="preview-wrap">
+                    <canvas id="spritePreview" width="300" height="200"></canvas>
+                </div>
+                <div id="spritePlayBar" class="playbar" style="display:none">
+                    <span>animazione in riproduzione</span>
+                </div>
+                <div id="spriteInfo" class="info"></div>
+                <div class="hint" style="font-size:11px; color:#8888a0; padding-top:4px">
+                    Tip: se una sprite è grande (es. 400×100), è uno sheet di frame. Imposta "Frame W" = 100 per vedere i frame.
+                    I gruppi <b>⚙</b> sono sprite concatenate a runtime (es. laser start+middle+end).<br>
+                    <b>✂️ Editor frame</b>: apri lo sheet come lista di frame singoli — seleziona, sostituisci, aggiungi, rimuovi, riordina.
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ MAPPE ============ -->
+        <section id="tab-mappe" class="tab-content">
+            <div class="map-toolbar">
+                <div class="tool-group">
+                    <button data-tool="wall" id="mapToolApply" class="tool-btn" data-sprite="environments/tile-wall.png">
+                        <canvas class="thumb" data-sprite="environments/tile-wall.png" data-frame-w="60" data-frame-h="99"></canvas>
+                        <span class="tool-label">Muro</span>
+                    </button>
+                    <button data-tool="water" id="mapToolWater" class="tool-btn">
+                        <span style="font-size:24px">💧</span>
+                        <span class="tool-label">Acqua</span>
+                    </button>
+                    <button data-tool="ditch" id="mapToolDitch" class="tool-btn">
+                        <span style="font-size:24px">🕳️</span>
+                        <span class="tool-label">Fossa</span>
+                    </button>
+                    <button data-tool="spike" id="mapToolSpike" class="tool-btn">
+                        <canvas class="thumb" data-sprite="environments/tile-spike.png" data-frame-w="60" data-frame-h="60"></canvas>
+                        <span class="tool-label">Spuntoni</span>
+                    </button>
+                    <button data-enemy="EntitySlime" class="tool-btn">
+                        <canvas class="thumb" data-sprite="characters/slime/slime-down.png" data-frame-w="80" data-frame-h="81"></canvas>
+                        <span class="tool-label">Slime</span>
+                    </button>
+                    <button data-enemy="EntityMushroom" class="tool-btn">
+                        <canvas class="thumb" data-sprite="characters/mushroom/mushroom-idle.png" data-frame-w="80" data-frame-h="80"></canvas>
+                        <span class="tool-label">Mushroom</span>
+                    </button>
+                    <button data-enemy="EntityBowldog" class="tool-btn">
+                        <canvas class="thumb" data-sprite="characters/bowldog/bowldog-throwdown.png" data-frame-w="80" data-frame-h="80"></canvas>
+                        <span class="tool-label">Bowldog</span>
+                    </button>
+                    <button data-enemy="EntityCactus" class="tool-btn">
+                        <canvas class="thumb" data-sprite="characters/cactus/cactusminion-down-walk.png" data-frame-w="80" data-frame-h="80"></canvas>
+                        <span class="tool-label">Cactus</span>
+                    </button>
+                    <button data-enemy="EntityDrone" class="tool-btn">
+                        <canvas class="thumb" data-sprite="characters/drone/drone-minion-down.png" data-frame-w="80" data-frame-h="80"></canvas>
+                        <span class="tool-label">Drone</span>
+                    </button>
+                    <button data-tool="marker:P" id="mapToolPlayer" class="tool-btn">
+                        <canvas class="thumb" data-sprite="characters/player/walk-down-angle.png" data-frame-w="80" data-frame-h="96"></canvas>
+                        <span class="tool-label">Player</span>
+                    </button>
+                    <button data-tool="marker:B" id="mapToolBoss" class="tool-btn">
+                        <canvas class="thumb" data-sprite="characters/slime-boss/slime-king-down.png" data-frame-w="80" data-frame-h="80"></canvas>
+                        <span class="tool-label">Boss</span>
+                    </button>
+                    <button data-tool="marker:E" id="mapToolRandom" class="tool-btn">
+                        <span style="font-size:24px">❓</span>
+                        <span class="tool-label">Random</span>
+                    </button>
+                    <button data-tool="erase" id="mapToolErase" class="tool-btn">
+                        <span style="font-size:24px">🧽</span>
+                        <span class="tool-label">Gomma</span>
+                    </button>
+                </div>
+                <div id="customTools" class="tool-group"></div>
+                <div class="tool-group">
+                    <button id="mapUndo">↶</button><button id="mapRedo">↷</button>
+                    <label class="chk"><input type="checkbox" id="mapGrid" checked> griglia</label>
+                    <span class="muted" style="font-size:11px">Tip: Shift+drag = seleziona celle</span>
+                </div>
+                <div id="selectionMenu" class="tool-group" style="display:none; background:#2f6fed22; padding:6px; border-radius:6px">
+                    <span id="selectionInfo" class="muted" style="font-size:11px"></span>
+                    <button id="selFill" class="tool-btn" title="Riempi con il tool attivo">↯ Riempi</button>
+                    <button id="selCopy" class="tool-btn" title="Copia selezione negli appunti">⧉ Copia</button>
+                    <button id="selPaste" class="tool-btn" title="Incolla a partire dalla selezione">⇥ Incolla</button>
+                    <button id="selDelete" class="tool-btn" title="Cancella contenuto selezione">✕ Cancella</button>
+                    <button id="selClear" class="tool-btn" title="Deseleziona">✕ Chiudi</button>
+                </div>
+                <div class="tool-group">
+                    <select id="mapLoadSelect"><option value="">— carica mappa di gioco (68) —</option></select>
+                    <select id="mapProjectSelect"><option value="">— mappe del progetto —</option></select>
+                    <button id="mapNew">✚ Nuova</button>
+                    <button id="mapSaveProject">💾 Salva</button>
+                    <input id="mapId" placeholder="id mappa (es. easy-custom-1)" />
+                    <button id="mapTest" class="primary">▶ Test nel gioco</button>
+                </div>
+            </div>
+            <div class="map-workspace">
+                <div class="map-canvas-wrap panel">
+                    <canvas id="mapCanvas"></canvas>
+                    <div class="map-footer">
+                        <span id="mapCursor"></span>
+                        <span id="mapStats"></span>
+                    </div>
+                </div>
+                <aside class="panel map-side">
+                    <h3>Validazione</h3>
+                    <div id="mapValidation" class="validation"><span class="muted">Premi «Valida» dopo le modifiche</span></div>
+                    <button id="mapValidate">Valida mappa</button>
+                    <h3>Come funziona</h3>
+                    <ul class="hint">
+                        <li>Muro = cella <code>tiles=1</code> + entità <code>EntityWall</code></li>
+                        <li>Acqua/Fossa = solo griglia: il gioco le «cuce» con l'autotiling</li>
+                        <li>Il portale è generato automaticamente in basso al centro</li>
+                        <li>P = spawn player · B = boss · E = nemico random</li>
+                        <li><b>Shift+drag</b> = seleziona rettangolo di celle</li>
+                        <li>Tab Asset → carica PNG e crea entità custom (muro/spuntoni/nemico)</li>
+                        <li>Tab Asset → cambia colore arena</li>
+                    </ul>
+                </aside>
+            </div>
+        </section>
+
+        <!-- ============ ASSET & GIOCA ============ -->
+        <section id="tab-assets" class="tab-content">
+            <div class="assets-grid">
+                <div class="panel">
+                    <h3>✚ Nuova sprite (pixel art)</h3>
+                    <label>Nome <input id="newSpriteName" placeholder="mia-creazione"></label>
+                    <label>Larghezza frame <input id="newSpriteW" type="number" value="80" min="1"></label>
+                    <label>Altezza frame <input id="newSpriteH" type="number" value="80" min="1"></label>
+                    <label>Numero frame <input id="newSpriteFrames" type="number" value="4" min="1" max="32"></label>
+                    <button id="newSpriteBtn" class="primary">Crea e disegna</button>
+                    <p class="hint">Sprite vuota da disegnare pixel per pixel. Aggiunta a texture-2 (repack).</p>
+                </div>
+
+                <div class="panel">
+                    <h3>✨ AI Sprite Generator</h3>
+                    <p class="hint">Genera sprite con AI (z-ai-web-dev-sdk). Scegli un template per precompilare prompt + dimensioni, oppure scrivi il tuo prompt.</p>
+                    <label>Template
+                        <select id="aiTemplate">
+                            <option value="">— custom (no template) —</option>
+                        </select>
+                    </label>
+                    <label>Prompt
+                        <textarea id="aiPrompt" rows="3" placeholder="es. pixel art fire slime, 80x81px per frame, 4 frames idle animation, transparent background"></textarea>
+                    </label>
+                    <label>Size AI (immagine generata)
+                        <select id="aiSize">
+                            <option value="1024x1024" selected>1024×1024 (square)</option>
+                            <option value="768x1344">768×1344 (portrait)</option>
+                            <option value="1344x768">1344×768 (landscape)</option>
+                        </select>
+                    </label>
+                    <label>Frame W (dopo generazione) <input id="aiFrameW" type="number" value="80" min="1"></label>
+                    <label>Frame H (dopo generazione) <input id="aiFrameH" type="number" value="80" min="1"></label>
+                    <div class="row">
+                        <button id="aiGenBtn" class="primary">✨ Genera</button>
+                        <button id="aiFillBtn" title="Riempie con template selezionato">↻ Usa template</button>
+                    </div>
+                    <div id="aiStatus" class="muted" style="font-size:12px"></div>
+                    <div id="aiPreview" style="margin-top:8px"></div>
+                    <div class="row" id="aiActions" style="display:none">
+                        <button id="aiToPixel" class="primary">✏️ Apri Pixel Editor</button>
+                        <button id="aiToFrame" class="primary">✂️ Apri Frame Editor</button>
+                        <button id="aiDownload">⬇ Salva PNG</button>
+                    </div>
+                    <h4>📜 History (ultimi 50)</h4>
+                    <div id="aiHistory" class="validation" style="max-height:240px; overflow:auto"></div>
+                </div>
+
+                <div class="panel">
+                    <h3>📤 Upload PNG → entità custom</h3>
+                    <p class="hint">Carica uno sprite PNG (es. generato con IA) e diventa un nuovo tipo di elemento piazzabile nella mappa. Il gioco lo renderizza nel motore vero.</p>
+                    <label>Nome classe
+                        <input id="upClassName" placeholder="es. MuroDiPietra (verrà EntityWallMuroDiPietra)">
+                    </label>
+                    <label>Tipo base
+                        <select id="upBaseClass">
+                            <option value="EntityWall">Muro (EntityWall)</option>
+                            <option value="EntitySpike">Spuntoni (EntitySpike)</option>
+                            <option value="EntitySlime">Slime (EntitySlime)</option>
+                            <option value="EntityMushroom">Mushroom (EntityMushroom)</option>
+                            <option value="EntityBowldog">Bowldog (EntityBowldog)</option>
+                            <option value="EntityCactus">Cactus (EntityCactus)</option>
+                            <option value="EntityDrone">Drone (EntityDrone)</option>
+                        </select>
+                    </label>
+                    <label>Larghezza frame <input id="upFrameW" type="number" value="60" min="1"></label>
+                    <label>Altezza frame <input id="upFrameH" type="number" value="60" min="1"></label>
+                    <label>Numero frame <input id="upFrames" type="number" value="1" min="1" max="32"></label>
+                    <label class="btn-file">📁 Scegli PNG<input type="file" id="upFile" accept="image/*" hidden></label>
+                    <span id="upFileLabel" class="muted">nessun file</span>
+                    <button id="upApplyBtn" class="primary">Crea entità custom</button>
+                    <h4>Elementi custom creati:</h4>
+                    <div id="upCustomList" class="validation">nessuno</div>
+                </div>
+
+                <div class="panel">
+                    <h3>📦 Le mie sprite salvate</h3>
+                    <p class="hint">Tutte le sprite create/modificate (in localStorage). Clicca per aprirle nell'editor o esporta su disco.</p>
+                    <div id="mySprites" class="validation"><span class="muted">nessuna sprite salvata</span></div>
+                    <button id="exportAllBtn">⬇ Esporta tutte su disco (zip JSON)</button>
+                    <button id="refreshSpritesBtn">↻ Aggiorna lista</button>
+                </div>
+
+                <div class="panel">
+                    <h3>🎭 Skin entità</h3>
+                    <p class="hint">Sostituisci la grafica di una classe di gioco con una sprite dell'atlante (anche una tua).</p>
+                    <label>Classe <select id="skinClass"></select></label>
+                    <label>Slot <select id="skinProp"></select></label>
+                    <label>Sprite sorgente <select id="skinSource"></select></label>
+                    <button id="skinApplyBtn" class="primary">Applica skin</button>
+                </div>
+
+                <div class="panel">
+                    <h3>🎨 Colori arena</h3>
+                    <p class="hint">Cambia il colore di sfondo dell'arena. Salvato nelle patch e applicato quando giochi.</p>
+                    <label>Sfondo arena <input type="color" id="colorArena" value="#93bf45"></label>
+                    <button id="colorApplyBtn" class="primary">Applica colore</button>
+                    <p class="hint">Default: <code>#93bf45</code> (verde oliva originale).</p>
+                </div>
+
+                <div class="panel">
+                    <h3>▶ Gioca</h3>
+                    <label>Mappa
+                        <select id="playMapSelect"></select>
+                    </label>
+                    <div class="row">
+                        <button id="playModsBtn" class="primary">▶ Gioca con le modifiche</button>
+                        <button id="playDebugBtn">🔧 Con box debug</button>
+                    </div>
+                    <p class="hint">«Gioco originale» (in alto) parte senza nessuna patch.</p>
+                    <h3>Stato patch</h3>
+                    <div id="patchStatus" class="validation"></div>
+                    <button id="clearPatchesBtn">🗑️ Rimuovi tutte le patch</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============ PIXEL EDITOR OVERLAY ============ -->
+    <div id="pixelOverlay" class="overlay">
+        <div class="overlay-box">
+            <div class="overlay-head">
+                <b id="pixelTitle">Editor pixel</b>
+                <span id="pixelPath" class="muted"></span>
+                <button id="pixelClose">✕</button>
+            </div>
+            <div class="overlay-toolbar">
+                <button class="tool-btn active" data-tool="pencil">✏️</button>
+                <button class="tool-btn" data-tool="eraser">🧽</button>
+                <button class="tool-btn" data-tool="bucket">🪣</button>
+                <button class="tool-btn" data-tool="picker">💧</button>
+                <input type="color" id="pixelColor" value="#ff0044">
+                <div id="pixelPalette" class="palette"></div>
+                <label class="chk"><input type="checkbox" id="pixelGrid" checked> griglia</label>
+                <label>Zoom
+                    <select id="pixelZoom">
+                        <option value="4">4×</option><option value="8" selected>8×</option>
+                        <option value="12">12×</option><option value="16">16×</option>
+                    </select>
+                </label>
+                <span id="pixelPos" class="muted"></span>
+                <button id="pixelUndo">↶ Undo</button>
+                <span class="spacer"></span>
+                <label class="btn-file">⬆ Importa PNG<input type="file" id="pixelImport" accept="image/*" hidden></label>
+                <button id="pixelDownload">⬇ PNG</button>
+                <button id="pixelSave" class="primary">💾 Salva</button>
+            </div>
+            <div class="overlay-canvas-wrap">
+                <canvas id="pixelCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ FRAME EDITOR OVERLAY ============ -->
+    <div id="frameOverlay" class="overlay">
+        <div class="overlay-box" style="width:min(1200px, 95vw); height:min(800px, 92vh)">
+            <div class="overlay-head">
+                <b id="frameTitle">Editor frame</b>
+                <span id="framePath" class="muted"></span>
+                <span class="spacer"></span>
+                <label class="chk"><input type="checkbox" id="frameMulti" checked> selezione multipla</label>
+                <button id="frameClose">✕</button>
+            </div>
+            <div class="overlay-toolbar">
+                <button id="frameAddBtn" class="tool-btn" title="Aggiungi un frame vuoto">➕ Aggiungi</button>
+                <button id="frameAddFromFile" class="tool-btn" title="Aggiungi un frame da PNG">📁 Da PNG</button>
+                <button id="frameDuplicate" class="tool-btn" title="Duplica il frame selezionato">⧉ Duplica</button>
+                <button id="frameReplace" class="tool-btn" title="Sostituisci il frame selezionato con uno da PNG">🔄 Sostituisci</button>
+                <button id="frameDelete" class="tool-btn" title="Rimuovi i frame selezionati">✕ Rimuovi</button>
+                <button id="frameMoveLeft" class="tool-btn" title="Sposta a sinistra">◀</button>
+                <button id="frameMoveRight" class="tool-btn" title="Sposta a destra">▶</button>
+                <span class="spacer"></span>
+                <label>Frame W
+                    <input type="number" id="frameFrameW" min="1" max="2048" style="width:70px">
+                </label>
+                <label>Frame H
+                    <input type="number" id="frameFrameH" min="1" max="2048" style="width:70px">
+                </label>
+                <button id="frameApplyDims" title="Applica dimensioni">↻ Applica</button>
+                <span class="spacer"></span>
+                <button id="frameEditPixel" class="tool-btn" title="Apri il pixel editor sul frame selezionato">✏️ Pixel</button>
+                <button id="frameDownload" class="tool-btn">⬇ PNG</button>
+                <button id="frameSave" class="primary">💾 Salva sheet</button>
+            </div>
+            <div id="frameStrip" class="frame-strip"></div>
+            <div id="frameInfo" class="muted" style="font-size:12px; padding:6px 10px; text-align:center"></div>
+        </div>
+    </div>
+    <input type="file" id="frameImportFile" accept="image/*" hidden>
+
+    <script src="js/gameData.js"></script>
+    <script src="js/playStudio.js"></script>
+    <script src="js/spriteExplorer.js"></script>
+    <script src="js/pixelEditor.js"></script>
+    <script src="js/frameEditor.js"></script>
+    <script src="js/mapEditor.js"></script>
+    <script src="js/aiGenerator.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

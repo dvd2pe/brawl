@@ -30,6 +30,45 @@ const PlayStudio = {
     this.refreshStatus();
   },
 
+  // ------------------------------------------------------------- entità custom (upload PNG → nuova classe)
+  addCustomClass(name, baseClass, dataURL, frameW, frameH, frames) {
+    // nome: "MuroDiPietra" → classe "EntityWallMuroDiPietra"
+    const clean = name.replace(/[^A-Za-z0-9]/g, '');
+    const className = baseClass + clean.charAt(0).toUpperCase() + clean.slice(1);
+    const spritePath = 'media/graphics/game/custom/' + className.toLowerCase() + '.png';
+    const p = this.patches();
+    p.customClasses = (p.customClasses || []).filter(c => c.className !== className);
+    p.customClasses.push({ className, baseClass, spritePath, data: dataURL, w: frameW, h: frameH, frames });
+    // aggiungi anche come addition per il repack (così è visibile nell'editor)
+    p.additions = (p.additions || []).filter(a => a.path !== spritePath);
+    p.additions.push({ path: spritePath, data: dataURL });
+    this.savePatches(p);
+    return { className, spritePath };
+  },
+
+  removeCustomClass(className) {
+    const p = this.patches();
+    if (p.customClasses) p.customClasses = p.customClasses.filter(c => c.className !== className);
+    if (p.additions) {
+      const removed = p.customClasses ? [] : [];
+      // rimuovi anche l'addition corrispondente
+      p.additions = p.additions.filter(a => a.path !== 'media/graphics/game/custom/' + className.toLowerCase() + '.png');
+    }
+    this.savePatches(p);
+    this.refreshStatus();
+  },
+
+  getCustomClasses() { const p = this.patches(); return p.customClasses || []; },
+
+  // ------------------------------------------------------------- colori arena
+  setColor(arenaColor) {
+    const p = this.patches();
+    p.colors = p.colors || {};
+    p.colors.arena = arenaColor;
+    this.savePatches(p);
+    this.refreshStatus();
+  },
+
   // ------------------------------------------------------------- sprite nuove (repack texture-2)
   newSpritePath(name) { return 'media/graphics/game/custom/' + name.replace(/[^\w-]/g, '') + '.png'; },
 
@@ -92,7 +131,7 @@ const PlayStudio = {
     localStorage.setItem(this.PLAY_KEY, JSON.stringify({ type: 'builtin', id }));
     window.open('../studio-play.html', '_blank');
   },
-  playVanilla() { window.open('../index.html', '_blank'); },
+  playVanilla() { window.open('../vanilla.html', '_blank'); },
   playDebug(id) {
     localStorage.setItem(this.PLAY_KEY, JSON.stringify({ type: 'builtin', id }));
     window.open('../studio-play.html?debug=true', '_blank');
@@ -107,7 +146,9 @@ const PlayStudio = {
     el.innerHTML = [
       `texture patchate: ${tex.length ? tex.join(', ') : 'nessuna'}`,
       `sprite nuove: ${(p.additions || []).length}`,
-      `skin entità: ${(p.skins || []).length}`
+      `skin entità: ${(p.skins || []).length}`,
+      `entità custom: ${(p.customClasses || []).length}`,
+      `colori: ${p.colors && p.colors.arena ? 'arena=' + p.colors.arena : 'default'}`
     ].map(l => `<div>• ${l}</div>`).join('');
   }
 };

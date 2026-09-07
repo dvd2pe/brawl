@@ -59,8 +59,8 @@ code { background: #23232f; padding: 1px 5px; border-radius: 4px; font-size: .9e
 }
 
 /* ============ tab sprite ============ */
-#tab-sprite { gap: 12px; padding: 12px; }
-.sprite-list { width: 320px; display: flex; flex-direction: column; gap: 8px; }
+#tab-sprite { gap: 12px; padding: 12px; min-width: 0; }
+.sprite-list { width: 280px; min-width: 280px; max-width: 280px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
 .sprite-list input { width: 100%; }
 .sprite-tree { flex: 1; overflow: auto; }
 .sprite-tree details { border-bottom: 1px solid #23232f; }
@@ -73,16 +73,59 @@ code { background: #23232f; padding: 1px 5px; border-radius: 4px; font-size: .9e
 }
 .sprite-item:hover { background: #232335; color: #fff; }
 .sprite-item.active { background: #2f6fed33; color: #fff; outline: 1px solid #2f6fed66; }
+.sprite-item.sprite-group { color: #6fb3ff; font-weight: 500; }
+.sprite-item.sprite-group:hover { background: #2f6fed22; }
+.sprite-item.sprite-custom { color: #55c97a; }
+.sprite-item.sprite-custom:hover { background: #55c97a22; }
+.sprite-item .group-tag { display: inline-block; padding: 0 4px; color: #e0b341; font-weight: bold; }
+.sprite-item .group-kind { color: #6fb3ff; font-size: 11px; font-weight: normal; padding-left: 4px; }
+.sprite-item .custom-tag { color: #55c97a; font-weight: bold; font-size: 11px; }
+.sprite-tree summary .custom-tag { color: #55c97a; font-size: 11px; margin-left: 4px; }
 
-.sprite-view { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+/* ============ map editor: tool buttons with sprite preview ============ */
+.map-toolbar .tool-btn {
+    display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 4px 6px; min-width: 56px; position: relative;
+}
+.map-toolbar .tool-btn canvas.thumb,
+.map-toolbar .tool-btn img.thumb {
+    width: 40px; height: 40px; object-fit: contain;
+    image-rendering: pixelated;
+    background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 8px 8px;
+    border-radius: 4px;
+}
+.map-toolbar .tool-btn .tool-label {
+    font-size: 11px; color: #aab; max-width: 60px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+}
+.map-toolbar .tool-btn:hover .tool-tip {
+    display: block;
+}
+.map-toolbar .tool-btn .tool-tip {
+    display: none;
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: #1a1a26; border: 1px solid #4a4a68; border-radius: 6px; padding: 8px;
+    z-index: 100; pointer-events: none;
+    box-shadow: 0 4px 16px #000a;
+}
+.map-toolbar .tool-btn .tool-tip canvas,
+.map-toolbar .tool-btn .tool-tip img {
+    image-rendering: pixelated;
+    background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px;
+    border-radius: 4px; display: block;
+}
+
+.sprite-view { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
 .toolbar, .overlay-toolbar {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    flex-shrink: 0;
 }
 .preview-wrap {
     flex: 1; overflow: auto; background:
     repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 24px 24px;
     border: 1px solid #2c2c40; border-radius: 8px; display: flex;
     align-items: flex-start; justify-content: center; padding: 14px;
+    min-height: 200px;
 }
 .preview-wrap canvas { image-rendering: pixelated; }
 .playbar { font-size: 12px; color: #6fb3ff; }
@@ -171,4 +214,29 @@ code { background: #23232f; padding: 1px 5px; border-radius: 4px; font-size: .9e
 }
 .setup-box pre {
     background: #101018; padding: 10px; border-radius: 8px; margin: 10px 0; overflow: auto;
+}
+
+/* ============ frame editor ============ */
+.frame-strip {
+    flex: 1; overflow: auto; padding: 14px;
+    background: #14141d; border-radius: 8px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-content: flex-start;
+}
+.frame-cell {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 6px; border: 2px solid #2c2c40; border-radius: 8px;
+    background: #1a1a26; cursor: pointer; position: relative;
+}
+.frame-cell:hover { border-color: #4a4a68; }
+.frame-cell.selected { border-color: #2f6fed; background: #2f6fed22; }
+.frame-cell .frame-thumb {
+    image-rendering: pixelated;
+    background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 8px 8px;
+    border-radius: 4px;
+}
+.frame-cell .frame-num {
+    font-size: 11px; color: #aab;
+}
+.frame-cell .frame-num input[type="checkbox"] {
+    margin-right: 4px;
 }

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>AI Generator — Test Gallery</title>
+<style>
+body { font-family: system-ui; background: #14141d; color: #e8e8f0; margin: 0; padding: 24px; }
+h1 { color: #fff; margin-bottom: 8px; }
+.sub { color: #9aa0b8; margin-bottom: 24px; font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.card { background: #1a1a26; border: 1px solid #2c2c40; border-radius: 10px; padding: 16px; }
+.card h3 { margin: 0 0 4px; color: #55c97a; font-size: 16px; }
+.card .meta { color: #888; font-size: 12px; margin-bottom: 12px; }
+.card img { width: 100%; height: auto; image-rendering: pixelated; border: 1px solid #2c2c40; border-radius: 6px; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px; }
+.card .prompt { color: #aab; font-size: 12px; margin-top: 8px; font-family: monospace; }
+.warn { background: #2a2a35; border: 1px solid #e0b341; color: #e0b341; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
+</style>
+</head>
+<body>
+<h1>🎨 AI Sprite Generator — Test Gallery</h1>
+<div class="sub">3 immagini reali generate con z-ai-web-dev-sdk, salvate su disco e servite via /public/ai-test/. Dimostrano che l'AI funziona. Nel pannello "AI Generator" dello Studio puoi generare e aprire direttamente nel Pixel/Frame Editor.</div>
+<div class="warn">⚠️ Nota: la route AI impiega 60-90 secondi. Il proxy del preview potrebbe scadere (vedi errore "Unexpected token '<'"). Ho aggiunto allowedDevOrigins + proxyTimeout a next.config e gestione errori robusta nel client. Se vedi l'errore, riprova: spesso funziona al 2° tentativo.</div>
+<div class="grid">
+  <div class="card">
+    <h3>🔥 Firepit</h3>
+    <div class="meta">1024×1024 · ~94 sec · 84KB</div>
+    <img src="/ai-test/firepit.jpg" alt="firepit">
+    <div class="prompt">"pixel art firepit with flames and logs, transparent background, top-down view, retro game style"</div>
+  </div>
+  <div class="card">
+    <h3>🟢 Slime Green</h3>
+    <div class="meta">1024×1024 · ~27 sec · 76KB</div>
+    <img src="/ai-test/slime-green.jpg" alt="slime">
+    <div class="prompt">"pixel art green slime creature 4 frames idle animation transparent background"</div>
+  </div>
+  <div class="card">
+    <h3>🧱 Stone Wall</h3>
+    <div class="meta">1024×1024 · ~74 sec · 86KB</div>
+    <img src="/ai-test/wall-stone.jpg" alt="wall">
+    <div class="prompt">"pixel art stone wall 60x99 single frame brown brick texture green moss top edge transparent background retro game"</div>
+  </div>
+</div>
+<p style="margin-top: 30px; color: #9aa0b8; font-size: 13px;">
+File originali su disco: <code>/home/z/my-project/download/ai-test/</code><br>
+File serviti via URL: <code>/ai-test/firepit.jpg</code>, <code>/ai-test/slime-green.jpg</code>, <code>/ai-test/wall-stone.jpg</code><br><br>
+<a href="/studio/" style="color: #2f6fed; text-decoration: none">← Torna allo Studio</a>
+</p>
+</body>
+</html>

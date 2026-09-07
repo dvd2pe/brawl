@@ -50,6 +50,16 @@ const GameData = {
     onProgress('Asset di gioco caricati.');
   },
 
+  // ------------------------------------------------------------- utility image
+  _loadImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('immagine non caricata: ' + url));
+      img.src = url;
+    });
+  },
+
   // ------------------------------------------------------------- packerplugin
   _parsePacker() {
     const src = this.raw;
@@ -194,6 +204,25 @@ const GameData = {
 
   // ------------------------------------------------------------- utility sprite
   frameFor(path) {
+    // 1. cerca nelle patch (custom additions e texture repack)
+    try {
+      const p = JSON.parse(localStorage.getItem('bhs_patches') || '{}');
+      if (p.textureJSON && p.additions) {
+        for (const add of p.additions) {
+          if (add.path === path) {
+            // trova la regione nel textureJSON patchato (chiavi = 'texture-2' etc.)
+            for (const texName in p.textureJSON) {
+              try {
+                const j = JSON.parse(p.textureJSON[texName] || '{}');
+                const f = j.frames && j.frames[path];
+                if (f) return { texIndex: this.packer.textures.indexOf(texName), texture: texName, ...f };
+              } catch (e) {}
+            }
+          }
+        }
+      }
+    } catch (e) {}
+    // 2. ricerca normale negli atlanti originali
     if (!this.packer) return null;
     for (let i = 0; i < this.packer.json.length; i++) {
       const f = this.packer.json[i].frames[path];
@@ -202,14 +231,72 @@ const GameData = {
     return null;
   },
 
+  // tutte le path note (originali + custom)
+  allPaths() {
+    const all = new Set();
+    if (this.packer) {
+      this.packer.json.forEach(j => Object.keys(j.frames).forEach(p => all.add(p)));
+    }
+    try {
+      const p = JSON.parse(localStorage.getItem('bhs_patches') || '{}');
+      (p.additions || []).forEach(a => all.add(a.path));
+    } catch (e) {}
+    return [...all];
+  },
+
+  // cache dei canvas per le additions (caricati on-demand)
+  _additionCanvases: {},
+  _loadAdditionCanvas(path) {
+    if (this._additionCanvases[path]) return Promise.resolve(this._additionCanvases[path]);
+    return new Promise((resolve, reject) => {
+      try {
+        const p = JSON.parse(localStorage.getItem('bhs_patches') || '{}');
+        const add = (p.additions || []).find(a => a.path === path);
+        if (!add) { reject(new Error('addition non trovata: ' + path)); return; }
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.naturalWidth; c.height = img.naturalHeight;
+          c.getContext('2d').drawImage(img, 0, 0);
+          this._additionCanvases[path] = c;
+          resolve(c);
+        };
+        img.onerror = () => reject(new Error('immagine non caricata: ' + path));
+        img.src = add.data;
+      } catch (e) { reject(e); }
+    });
+  },
+
   // disegna la regione (o l'n-esimo frame di un foglio animato) su un ctx
   drawRegion(ctx, path, dx, dy, opts) {
     opts = opts || {};
     const fd = this.frameFor(path);
     if (!fd) return false;
+    // se è una custom addition: usa il canvas caricato on-demand
+    if (this._additionCanvases[path]) {
+      const img = this._additionCanvases[path];
+      if (opts.frameW) {
+        const cols = Math.floor(img.width / opts.frameW);
+        const idx = opts.frameIndex || 0;
+        const sx = (idx % cols) * opts.frameW;
+        const sy = Math.floor(idx / cols) * (opts.frameH || opts.frameW);
+        if (opts.flip) {
+          ctx.save(); ctx.translate(dx + opts.frameW, dy); ctx.scale(-1, 1);
+          ctx.drawImage(img, sx, sy, opts.frameW, opts.frameH || opts.frameW, 0, 0, opts.frameW, opts.frameH || opts.frameW);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, sx, sy, opts.frameW, opts.frameH || opts.frameW, dx, dy, opts.frameW, opts.frameH || opts.frameW);
+        }
+        return true;
+      }
+      ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, img.width, img.height);
+      return true;
+    }
+    // atlante originale
     const img = this.canvases[fd.texIndex];
+    if (!img) return false;
     const f = fd.frame;
-    if (opts.frameW) {           // n-esimo frame dentro la regione
+    if (opts.frameW) {
       const cols = Math.floor(f.w / opts.frameW);
       const idx = opts.frameIndex || 0;
       const sx = f.x + (idx % cols) * opts.frameW;
@@ -229,6 +316,8 @@ const GameData = {
 
   // canvas contenente la regione (per editing)
   extractRegion(path) {
+    // se è custom: ritorna il canvas cached
+    if (this._additionCanvases[path]) return this._additionCanvases[path];
     const fd = this.frameFor(path);
     if (!fd) return null;
     const c = document.createElement('canvas');
