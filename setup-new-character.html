@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Setup New Character — Brawl Hero Studio</title>
+<style>
+body { font-family: system-ui; background: #14141d; color: #e8e8f0; margin: 0; padding: 40px; text-align: center; }
+h1 { color: #fff; margin-bottom: 8px; }
+.sub { color: #9aa0b8; margin-bottom: 24px; font-size: 14px; }
+#status { background: #1a1a26; border: 1px solid #2c2c40; border-radius: 8px; padding: 20px; max-width: 600px; margin: 0 auto; text-align: left; font-size: 14px; }
+.ok { color: #55c97a; }
+.err { color: #ee5555; }
+.muted { color: #888; }
+button { background: #2f6fed; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-size: 15px; cursor: pointer; margin: 10px; }
+button:hover { background: #4581f5; }
+button:disabled { background: #34344a; color: #666; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<h1>⚔️ Setup New Character (Red Knight)</h1>
+<div class="sub">Replaces EntityPlayer's 7 sprite sheets with a new red knight character (same walk + attack mechanics)</div>
+<div id="status">Click the button to set up...</div>
+<br>
+<button id="setupBtn" onclick="setupCharacter()">⚔️ Setup & Play</button>
+<button id="clearBtn" onclick="clearSkins()">🗑️ Clear Skins</button>
+
+<script>
+async function setupCharacter() {
+  const statusEl = document.getElementById('status');
+  const btn = document.getElementById('setupBtn');
+  btn.disabled = true;
+  statusEl.innerHTML = '<span class="muted">Loading sprite sheets...</span>';
+
+  const sheets = [
+    { file: 'walk-down.png', prop: 'animSheet_walk_down', w: 150, h: 160 },
+    { file: 'walk-up.png', prop: 'animSheet_walk_up', w: 150, h: 160 },
+    { file: 'walk-side.png', prop: 'animSheet_walk_side', w: 150, h: 160 },
+    { file: 'walk-down-angle.png', prop: 'animSheet_walk_side_down', w: 150, h: 160 },
+    { file: 'walk-up-angle.png', prop: 'animSheet_walk_side_up', w: 150, h: 160 },
+    { file: 'throw-down.png', prop: 'animSheet_attack_down', w: 150, h: 160 },
+    { file: 'throw-up.png', prop: 'animSheet_attack_up', w: 150, h: 160 },
+  ];
+
+  const skins = [];
+  for (let i = 0; i < sheets.length; i++) {
+    const s = sheets[i];
+    statusEl.innerHTML = `Loading ${s.file} (${i+1}/${sheets.length})...`;
+    try {
+      const r = await fetch('/ai-test/new-character/' + s.file);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const blob = await r.blob();
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      skins.push({ cls: 'EntityPlayer', prop: s.prop, data: dataUrl, w: s.w, h: s.h });
+      statusEl.innerHTML += ' <span class="ok">✓</span><br>';
+    } catch (e) {
+      statusEl.innerHTML += ' <span class="err">✗ ' + e.message + '</span><br>';
+      btn.disabled = false;
+      return;
+    }
+  }
+
+  // Save to localStorage patches
+  const p = JSON.parse(localStorage.getItem('bhs_patches') || '{}');
+  // Remove old EntityPlayer skins, keep others
+  p.skins = (p.skins || []).filter(s => s.cls !== 'EntityPlayer');
+  p.skins.push(...skins);
+  localStorage.setItem('bhs_patches', JSON.stringify(p));
+
+  statusEl.innerHTML += '<br><span class="ok">✓ All 7 skins assigned to EntityPlayer</span><br>';
+  statusEl.innerHTML += '<span class="muted">Skins saved in localStorage. Now click "Play" to test.</span><br><br>';
+
+  // Set pending play to tutorial-1
+  localStorage.setItem('bhs_pending_play', JSON.stringify({ type: 'builtin', id: 'tutorial-1' }));
+  statusEl.innerHTML += '<span class="ok">✓ Play command set to tutorial-1</span><br><br>';
+
+  btn.disabled = false;
+  btn.textContent = '▶ Play Now';
+  btn.onclick = () => { window.open('/studio-play.html', '_blank'); };
+}
+
+function clearSkins() {
+  const p = JSON.parse(localStorage.getItem('bhs_patches') || '{}');
+  if (p.skins) p.skins = p.skins.filter(s => s.cls !== 'EntityPlayer');
+  localStorage.setItem('bhs_patches', JSON.stringify(p));
+  document.getElementById('status').innerHTML = '<span class="ok">✓ EntityPlayer skins cleared. The game will use original player sprites.</span>';
+}
+</script>
+</body>
+</html>
