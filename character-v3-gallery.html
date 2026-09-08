@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>New Character v3 — AI Generated</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui; background: #14141d; color: #e8e8f0; padding: 20px; }
+h1 { color: #fff; margin-bottom: 4px; font-size: 24px; }
+.sub { color: #9aa0b8; margin-bottom: 20px; font-size: 14px; }
+.section { background: #1a1a26; border: 1px solid #2c2c40; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.section h2 { color: #55c97a; font-size: 18px; margin-bottom: 12px; }
+.section p { color: #9aa0b8; font-size: 13px; margin-bottom: 12px; line-height: 1.5; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.card { background: #14141d; border: 1px solid #2c2c40; border-radius: 8px; padding: 8px; text-align: center; }
+.card img { max-width: 100%; height: auto; image-rendering: auto; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px; border-radius: 4px; }
+.card .label { font-size: 11px; color: #aab; margin-top: 4px; }
+.card .pose { font-size: 10px; color: #6fb3ff; margin-top: 2px; }
+.sheet-card { background: #14141d; border: 1px solid #2f6fed; border-radius: 8px; padding: 12px; text-align: center; }
+.sheet-card img { max-width: 100%; height: auto; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px; border-radius: 4px; }
+.sheet-card .label { font-size: 13px; color: #6fb3ff; margin-top: 6px; font-weight: 500; }
+.sheet-card .info { font-size: 11px; color: #888; margin-top: 2px; }
+.tag { display: inline-block; background: #2f6fed33; color: #6fb3ff; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+.ref-tag { background: #55c97a33; color: #55c97a; }
+</style>
+</head>
+<body>
+<h1>⚔️ New Character — AI Generated (v3)</h1>
+<div class="sub">Fantasy knight generated with 2-pass AI workflow: 1 reference + 15 poses using z-ai-web-dev-sdk edit() for consistency. Style: clean digital illustration, NOT pixel art.</div>
+
+<!-- REFERENCE -->
+<div class="section">
+  <h2>📷 Reference Image <span class="tag ref-tag">PASS 1 — character design</span></h2>
+  <p>This is the single character design image generated first. All 15 poses below were generated using this as reference via <code>zai.images.generations.edit()</code> for consistency.</p>
+  <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap">
+    <img src="/ai-test/new-character-v3/reference.jpg" style="max-width:300px; border-radius:8px; border:1px solid #34344a">
+    <div style="font-size:13px; color:#9aa0b8; max-width:400px">
+      <b>Prompt:</b><br>
+      <code style="font-size:11px; color:#aab">"A fantasy knight character design reference sheet. The character is a young adventurer wearing blue steel armor with gold trim, a white cape, brown leather boots, and carrying a silver sword. Top-down 3-quarter view, facing towards the camera. Full body visible, standing in a neutral idle pose."</code>
+      <br><br>
+      <b>Generation time:</b> ~52 seconds<br>
+      <b>Size:</b> 1024×1024<br>
+      <b>Style:</b> Clean digital illustration (NOT pixel art)
+    </div>
+  </div>
+</div>
+
+<!-- INDIVIDUAL POSES -->
+<div class="section">
+  <h2>🧑 15 Individual Poses <span class="tag">PASS 2 — with reference</span></h2>
+  <p>Each pose was generated using <code>edit()</code> with the reference above. The prompt explicitly says: <i>"This must be the EXACT SAME character as the reference image. Same hair, same armor, same colors, same proportions. Only the POSE should change."</i></p>
+  <div class="grid">
+    <div class="card"><img src="/ai-test/new-character-v3/walk-down-rest.png"><div class="label">Walk Down</div><div class="pose">Rest</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-down-left-leg.png"><div class="label">Walk Down</div><div class="pose">Left Leg Forward</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-down-right-leg.png"><div class="label">Walk Down</div><div class="pose">Right Leg Forward</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-up-rest.png"><div class="label">Walk Up</div><div class="pose">Rest (back view)</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-up-left-leg.png"><div class="label">Walk Up</div><div class="pose">Left Leg</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-up-right-leg.png"><div class="label">Walk Up</div><div class="pose">Right Leg</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-side-rest.png"><div class="label">Walk Side</div><div class="pose">Rest (profile)</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-side-front-step.png"><div class="label">Walk Side</div><div class="pose">Front Step</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/walk-side-back-step.png"><div class="label">Walk Side</div><div class="pose">Back Step</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/attack-raise.png"><div class="label">Attack</div><div class="pose">Raise Weapon</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/attack-swing.png"><div class="label">Attack</div><div class="pose">Swing Down</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/attack-recover.png"><div class="label">Attack</div><div class="pose">Recover</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/throw-raise.png"><div class="label">Throw</div><div class="pose">Draw Back</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/throw-release.png"><div class="label">Throw</div><div class="pose">Release</div></div>
+    <div class="card"><img src="/ai-test/new-character-v3/hurt.png"><div class="label">Hurt</div><div class="pose">Staggering</div></div>
+  </div>
+</div>
+
+<!-- FINAL SHEETS -->
+<div class="section">
+  <h2>📋 7 Final Sprite Sheets <span class="tag">assembled</span></h2>
+  <p>Assembled from the 15 poses above into the exact format required by the game (same as EntityPlayer):</p>
+  <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">
+    <div class="sheet-card">
+      <img src="/ai-test/new-character-v3/walk-down.png" style="max-height:80px">
+      <div class="label">walk-down.png</div>
+      <div class="info">1800×160 · 12 frames · [rest, left-leg, rest, right-leg] × 3</div>
+    </div>
+    <div class="sheet-card">
+      <img src="/ai-test/new-character-v3/walk-up.png" style="max-height:80px">
+      <div class="label">walk-up.png</div>
+      <div class="info">1800×160 · 12 frames · back view walk cycle</div>
+    </div>
+    <div class="sheet-card">
+      <img src="/ai-test/new-character-v3/walk-side.png" style="max-height:80px">
+      <div class="label">walk-side.png</div>
+      <div class="info">1800×160 · 12 frames · side view walk cycle</div>
+    </div>
+    <div class="sheet-card">
+      <img src="/ai-test/new-character-v3/walk-down-angle.png" style="max-height:80px">
+      <div class="label">walk-down-angle.png</div>
+      <div class="info">1800×160 · 12 frames · diagonal (reuses walk-down)</div>
+    </div>
+    <div class="sheet-card">
+      <img src="/ai-test/new-character-v3/walk-up-angle.png" style="max-height:80px">
+      <div class="label">walk-up-angle.png</div>
+      <div class="info">1800×160 · 12 frames · diagonal (reuses walk-up)</div>
+    </div>
+    <div class="sheet-card">
+      <img src="/ai-test/new-character-v3/throw-down.png" style="max-height:80px">
+      <div class="label">throw-down.png</div>
+      <div class="info">1200×160 · 8 frames · [raise, raise, swing×3, recover×2, raise]</div>
+    </div>
+    <div class="sheet-card">
+      <img src="/ai-test/new-character-v3/throw-up.png" style="max-height:80px">
+      <div class="label">throw-up.png</div>
+      <div class="info">1200×160 · 8 frames · [raise, swing, recover, raise] × 2</div>
+    </div>
+  </div>
+</div>
+
+<!-- WORKFLOW -->
+<div class="section">
+  <h2>🔧 How to Reproduce</h2>
+  <p style="color:#9aa0b8; font-size:13px; line-height:1.8">
+    <b>Step 1:</b> Open Studio → Asset tab → "✨ AI Sprite Generator v3" → Category: "🧑 Character Actions" → Template: "Walk Down — Rest" → Click "✨ Genera" (no reference yet)<br>
+    <b>Step 2:</b> After generation → Click "↻ Set Reference" (the first pose becomes the reference for all subsequent poses)<br>
+    <b>Step 3:</b> Template: "Walk Down — Left Leg Forward" → Click "✨ Genera" (uses reference via <code>edit()</code> for consistency)<br>
+    <b>Step 4:</b> Repeat for all 15 poses (each uses the same reference → same character, different pose only)<br>
+    <b>Step 5:</b> After all poses → Click "💾 Save in library" to save the prompt + reference for future reuse<br>
+    <b>Step 6:</b> Download each pose with "⬇ PNG" → Use Frame Editor to assemble into final sheets<br>
+    <br>
+    <b>Total generation time:</b> ~52s (reference) + 15 × ~14s (poses) = ~4.5 minutes<br>
+    <b>Reference image:</b> <a href="/ai-test/new-character-v3/reference.jpg" style="color:#2f6fed">reference.jpg</a><br>
+    <b>Individual poses:</b> 15 × PNG (150×160 each, transparent background)<br>
+    <b>Final sheets:</b> 7 × PNG (walk: 1800×160, throw: 1200×160)
+  </p>
+</div>
+
+<p style="text-align:center; margin-top:20px">
+  <a href="/studio/" style="color:#2f6fed; text-decoration:none; font-size:14px">← Back to Studio</a>
+</p>
+</body>
+</html>
