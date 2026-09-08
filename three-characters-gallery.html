@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>3 Characters — AI Generated</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui; background: #14141d; color: #e8e8f0; padding: 20px; }
+h1 { color: #fff; margin-bottom: 4px; font-size: 24px; }
+.sub { color: #9aa0b8; margin-bottom: 20px; font-size: 14px; }
+.char-section { background: #1a1a26; border: 1px solid #2c2c40; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.char-section h2 { font-size: 20px; margin-bottom: 12px; }
+.char-section.warrior h2 { color: #ee5555; }
+.char-section.archer h2 { color: #55c97a; }
+.char-section.mage h2 { color: #a855f7; }
+.poses { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.pose-card { text-align: center; }
+.pose-card img { width: 75px; height: 80px; object-fit: contain; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 8px 8px; border-radius: 4px; }
+.pose-card .lbl { font-size: 9px; color: #888; margin-top: 2px; }
+.sheets { display: flex; gap: 16px; flex-wrap: wrap; }
+.sheet-card { text-align: center; }
+.sheet-card img { max-width: 100%; height: auto; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px; border-radius: 4px; border: 1px solid #34344a; }
+.sheet-card .lbl { font-size: 12px; color: #6fb3ff; margin-top: 4px; font-weight: 500; }
+.sheet-card .info { font-size: 10px; color: #666; }
+.play-btn { display: inline-block; background: #2f6fed; color: #fff; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 12px; }
+</style>
+</head>
+<body>
+<h1>⚔️🏹🔮 3 AI-Generated Characters</h1>
+<div class="sub">Each character was generated with 2-pass AI workflow: 1 reference + 7 poses (walk + attack). Same style, different designs.</div>
+
+<!-- WARRIOR -->
+<div class="char-section warrior">
+  <h2>⚔️ Warrior — Red Armor + Iron Sword</h2>
+  <div class="poses">
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/reference.jpg"><div class="lbl">Reference</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/walk_down_rest.png"><div class="lbl">Walk Rest</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/walk_down_step1.png"><div class="lbl">Left Leg</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/walk_down_step2.png"><div class="lbl">Right Leg</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/walk_up_rest.png"><div class="lbl">Back View</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/walk_side_rest.png"><div class="lbl">Side</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/throw_down_raise.png"><div class="lbl">Raise</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/warrior/throw_down_swing.png"><div class="lbl">Swing</div></div>
+  </div>
+  <div class="sheets">
+    <div class="sheet-card"><img src="/ai-test/three-characters/warrior/walk-down.png" style="max-height:60px"><div class="lbl">walk-down.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/warrior/walk-up.png" style="max-height:60px"><div class="lbl">walk-up.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/warrior/walk-side.png" style="max-height:60px"><div class="lbl">walk-side.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/warrior/throw-down.png" style="max-height:60px"><div class="lbl">throw-down.png</div><div class="info">1200×160 · 8f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/warrior/throw-up.png" style="max-height:60px"><div class="lbl">throw-up.png</div><div class="info">1200×160 · 8f</div></div>
+  </div>
+</div>
+
+<!-- ARCHER -->
+<div class="char-section archer">
+  <h2>🏹 Archer — Green Cloak + Bow</h2>
+  <div class="poses">
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/reference.jpg"><div class="lbl">Reference</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/walk_down_rest.png"><div class="lbl">Walk Rest</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/walk_down_step1.png"><div class="lbl">Left Leg</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/walk_down_step2.png"><div class="lbl">Right Leg</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/walk_up_rest.png"><div class="lbl">Back View</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/walk_side_rest.png"><div class="lbl">Side</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/throw_down_raise.png"><div class="lbl">Draw Bow</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/archer/throw_down_swing.png"><div class="lbl">Release</div></div>
+  </div>
+  <div class="sheets">
+    <div class="sheet-card"><img src="/ai-test/three-characters/archer/walk-down.png" style="max-height:60px"><div class="lbl">walk-down.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/archer/walk-up.png" style="max-height:60px"><div class="lbl">walk-up.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/archer/walk-side.png" style="max-height:60px"><div class="lbl">walk-side.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/archer/throw-down.png" style="max-height:60px"><div class="lbl">throw-down.png</div><div class="info">1200×160 · 8f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/archer/throw-up.png" style="max-height:60px"><div class="lbl">throw-up.png</div><div class="info">1200×160 · 8f</div></div>
+  </div>
+</div>
+
+<!-- MAGE -->
+<div class="char-section mage">
+  <h2>🔮 Mage — Purple Robes + Staff</h2>
+  <div class="poses">
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/reference.jpg"><div class="lbl">Reference</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/walk_down_rest.png"><div class="lbl">Walk Rest</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/walk_down_step1.png"><div class="lbl">Left Leg</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/walk_down_step2.png"><div class="lbl">Right Leg</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/walk_up_rest.png"><div class="lbl">Back View</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/walk_side_rest.png"><div class="lbl">Side</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/throw_down_raise.png"><div class="lbl">Raise Staff</div></div>
+    <div class="pose-card"><img src="/ai-test/three-characters/mage/throw_down_swing.png"><div class="lbl">Cast Spell</div></div>
+  </div>
+  <div class="sheets">
+    <div class="sheet-card"><img src="/ai-test/three-characters/mage/walk-down.png" style="max-height:60px"><div class="lbl">walk-down.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/mage/walk-up.png" style="max-height:60px"><div class="lbl">walk-up.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/mage/walk-side.png" style="max-height:60px"><div class="lbl">walk-side.png</div><div class="info">1800×160 · 12f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/mage/throw-down.png" style="max-height:60px"><div class="lbl">throw-down.png</div><div class="info">1200×160 · 8f</div></div>
+    <div class="sheet-card"><img src="/ai-test/three-characters/mage/throw-up.png" style="max-height:60px"><div class="lbl">throw-up.png</div><div class="info">1200×160 · 8f</div></div>
+  </div>
+</div>
+
+<p style="text-align:center; margin-top:20px">
+  <a href="/play-new-character.html" class="play-btn">▶ Play</a>
+  <a href="/studio/" style="color:#2f6fed; text-decoration:none; font-size:14px; margin-left:20px">← Studio</a>
+</p>
+</body>
+</html>
