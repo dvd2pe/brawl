@@ -191,38 +191,60 @@
                 </div>
 
                 <div class="panel">
-                    <h3>✨ AI Sprite Generator</h3>
-                    <p class="hint">Genera sprite con AI (z-ai-web-dev-sdk). Scegli un template per precompilare prompt + dimensioni, oppure scrivi il tuo prompt.</p>
+                    <h3>✨ AI Sprite Generator v3</h3>
+                    <p class="hint">Genera sprite con AI (z-ai-web-dev-sdk). Reference image per consistenza, prompt library, queue.</p>
+                    
+                    <label>Reference image (per consistenza)
+                        <input type="file" id="aiRefFile" accept="image/*" hidden>
+                        <button id="aiRefBtn" class="btn-file">📁 Carica reference</button>
+                        <button id="aiUseLastRef" title="Usa ultima generata come reference">↻ Ultima</button>
+                        <button id="aiClearRef" title="Rimuovi reference">✕</button>
+                    </label>
+                    <div id="aiRefPreview" style="margin:4px 0"></div>
+                    
+                    <label>Categoria
+                        <select id="aiCategory">
+                            <option value="">— tutte —</option>
+                        </select>
+                    </label>
                     <label>Template
                         <select id="aiTemplate">
                             <option value="">— custom (no template) —</option>
                         </select>
                     </label>
                     <label>Prompt
-                        <textarea id="aiPrompt" rows="3" placeholder="es. pixel art fire slime, 80x81px per frame, 4 frames idle animation, transparent background"></textarea>
+                        <textarea id="aiPrompt" rows="3" placeholder="es. fantasy knight in blue armor, facing camera, idle pose"></textarea>
                     </label>
-                    <label>Size AI (immagine generata)
+                    <label>Size AI
                         <select id="aiSize">
                             <option value="1024x1024" selected>1024×1024 (square)</option>
                             <option value="768x1344">768×1344 (portrait)</option>
                             <option value="1344x768">1344×768 (landscape)</option>
                         </select>
                     </label>
-                    <label>Frame W (dopo generazione) <input id="aiFrameW" type="number" value="80" min="1"></label>
-                    <label>Frame H (dopo generazione) <input id="aiFrameH" type="number" value="80" min="1"></label>
+                    <label>Frame W (post-gen) <input id="aiFrameW" type="number" value="150" min="1"></label>
+                    <label>Frame H (post-gen) <input id="aiFrameH" type="number" value="160" min="1"></label>
                     <div class="row">
                         <button id="aiGenBtn" class="primary">✨ Genera</button>
-                        <button id="aiFillBtn" title="Riempie con template selezionato">↻ Usa template</button>
+                        <button id="aiSavePromptBtn">💾 Salva in library</button>
+                        <button id="aiQueueBtn">📋 Queue (0)</button>
                     </div>
                     <div id="aiStatus" class="muted" style="font-size:12px"></div>
                     <div id="aiPreview" style="margin-top:8px"></div>
                     <div class="row" id="aiActions" style="display:none">
-                        <button id="aiToPixel" class="primary">✏️ Apri Pixel Editor</button>
-                        <button id="aiToFrame" class="primary">✂️ Apri Frame Editor</button>
-                        <button id="aiDownload">⬇ Salva PNG</button>
+                        <button id="aiToPixel" class="primary">✏️ Pixel Editor</button>
+                        <button id="aiToFrame" class="primary">✂️ Frame Editor</button>
+                        <button id="aiSetRef" title="Usa come reference per prossime generazioni">↻ Set Reference</button>
+                        <button id="aiDownload">⬇ PNG</button>
                     </div>
-                    <h4>📜 History (ultimi 50)</h4>
-                    <div id="aiHistory" class="validation" style="max-height:240px; overflow:auto"></div>
+                    <details>
+                        <summary>📚 Prompt Library</summary>
+                        <div id="aiLibrary" class="validation" style="max-height:200px; overflow:auto"></div>
+                    </details>
+                    <details>
+                        <summary>📜 History</summary>
+                        <div id="aiHistory" class="validation" style="max-height:200px; overflow:auto"></div>
+                    </details>
                 </div>
 
                 <div class="panel">

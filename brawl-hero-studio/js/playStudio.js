@@ -208,7 +208,9 @@ const PlayStudio = {
     document.getElementById('closePlayLink').addEventListener('click', () => div.remove());
   },
 
-  // ------------------------------------------------------------- UI stato
+  // ------------------------------------------------------------- UI stato + version history
+  HISTORY_KEY: 'bhs_patch_history',
+
   refreshStatus() {
     const el = document.getElementById('patchStatus');
     if (!el) return;
@@ -219,8 +221,34 @@ const PlayStudio = {
       `sprite nuove: ${(p.additions || []).length}`,
       `skin entità: ${(p.skins || []).length}`,
       `entità custom: ${(p.customClasses || []).length}`,
-      `colori: ${p.colors && p.colors.arena ? 'arena=' + p.colors.arena : 'default'}`
+      `colori: ${p.colors && p.colors.arena ? 'arena=' + p.colors.arena : 'default'}`,
+      `<details><summary style="cursor:pointer; color:#6fb3ff; font-size:11px">📊 Version history (${this.getHistory().length})</summary><div id="patchHistoryList" style="font-size:11px; color:#888; padding:4px 12px"></div></details>`
     ].map(l => `<div>• ${l}</div>`).join('');
-  }
+    // Fill history list
+    const histEl = document.getElementById('patchHistoryList');
+    if (histEl) {
+      const hist = this.getHistory();
+      if (!hist.length) { histEl.innerHTML = '<span class="muted">nessuna modifica registrata</span>'; }
+      else {
+        histEl.innerHTML = hist.slice(0, 20).map(h => {
+          const dt = new Date(h.ts);
+          return `<div style="padding:2px 0; border-bottom:1px solid #23232f">${dt.toLocaleString()} — <span style="color:${h.color || '#55c97a'}">${h.action}</span>${h.detail ? ': ' + h.detail : ''}</div>`;
+        }).join('');
+      }
+    }
+  },
+
+  // Version history (like git log for patches)
+  getHistory() {
+    try { return JSON.parse(localStorage.getItem(this.HISTORY_KEY) || '[]'); }
+    catch { return []; }
+  },
+  addHistory(action, detail, color) {
+    const hist = this.getHistory();
+    hist.unshift({ action, detail, color, ts: Date.now() });
+    // Keep last 100 entries
+    localStorage.setItem(this.HISTORY_KEY, JSON.stringify(hist.slice(0, 100)));
+  },
+  clearHistory() { localStorage.removeItem(this.HISTORY_KEY); },
 };
 window.PlayStudio = PlayStudio;

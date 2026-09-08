@@ -1,4 +1,5 @@
 // main.js — shell dello Studio: boot asset reali, tab, collegamenti fra moduli
+let _lastAIRef = null; // reference image data URL for AI generation consistency
 const App = {
   statusEl: null,
 
@@ -199,28 +200,98 @@ const App = {
     this.initAIGenerator();
   },
 
-  // ------------------------------------------------------------- AI Sprite Generator
+  // ------------------------------------------------------------- AI Sprite Generator v3
   initAIGenerator() {
     const $ = id => this.$(id);
-    // popola template
-    const tplSel = $('aiTemplate');
-    if (tplSel) {
-      AIGenerator.TEMPLATES.forEach(t => {
-        const o = document.createElement('option'); o.value = t.id;
-        o.textContent = `${t.label} · ${t.w}×${t.h} · ${t.frames}f`;
-        tplSel.appendChild(o);
+    _lastAIRef = null; // reference image data URL
+
+    // popola categorie
+    const catSel = $('aiCategory');
+    if (catSel) {
+      Object.entries(AIGenerator.CATEGORIES).forEach(([id, c]) => {
+        const o = document.createElement('option'); o.value = id;
+        o.textContent = c.label;
+        catSel.appendChild(o);
       });
     }
+
+    // popola template (filtra per categoria)
+    const tplSel = $('aiTemplate');
+    const fillTemplates = () => {
+      const cat = catSel ? catSel.value : '';
+      tplSel.innerHTML = '<option value="">— custom (no template) —</option>';
+      Object.entries(AIGenerator.TEMPLATES).forEach(([id, t]) => {
+        if (cat && t.category !== cat) return;
+        const o = document.createElement('option'); o.value = id;
+        o.textContent = t.label + ' · ' + t.w + '×' + t.h + ' · ' + t.frames + 'f';
+        tplSel.appendChild(o);
+      });
+    };
+    fillTemplates();
+    if (catSel) catSel.addEventListener('change', fillTemplates);
+
+    // fill from template
     const fillFromTemplate = () => {
       const id = tplSel.value;
-      const t = AIGenerator.TEMPLATES.find(x => x.id === id);
+      const t = AIGenerator.TEMPLATES[id];
       if (!t) return;
       $('aiPrompt').value = t.prompt;
       $('aiFrameW').value = t.w;
       $('aiFrameH').value = t.h;
     };
-    $('aiFillBtn').addEventListener('click', fillFromTemplate);
     tplSel.addEventListener('change', fillFromTemplate);
+
+    // reference image
+    $('aiRefBtn').addEventListener('click', () => $('aiRefFile').click());
+    $('aiRefFile').addEventListener('change', e => {
+      const f = e.target.files[0]; if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        _lastAIRef = reader.result;
+        AIGenerator.setReference(reader.result, f.name);
+        this._showRefPreview();
+      };
+      reader.readAsDataURL(f);
+    });
+    $('aiUseLastRef').addEventListener('click', () => {
+      if (this._lastAICanvas) {
+        _lastAIRef = this._lastAICanvas.toDataURL('image/png');
+        AIGenerator.setReference(_lastAIRef, 'Last generated');
+        this._showRefPreview();
+      } else alert('Nessuna immagine generata da usare come reference');
+    });
+    $('aiClearRef').addEventListener('click', () => {
+      _lastAIRef = null;
+      AIGenerator.clearReference();
+      this._showRefPreview();
+    });
+    $('aiSetRef').addEventListener('click', () => {
+      if (this._lastAICanvas) {
+        _lastAIRef = this._lastAICanvas.toDataURL('image/png');
+        AIGenerator.setReference(_lastAIRef, 'Generated ' + new Date().toLocaleString());
+        this._showRefPreview();
+        this.setStatus('✓ Reference impostata — le prossime generazioni useranno questa immagine', true);
+      }
+    });
+    this._showRefPreview();
+
+    // salva in library
+    $('aiSavePromptBtn').addEventListener('click', () => {
+      const prompt = $('aiPrompt').value.trim();
+      if (!prompt) { alert('Scrivi un prompt prima'); return; }
+      const name = prompt.slice(0, 60).replace(/\s+/g, '_').replace(/[^\w-]/g, '');
+      AIGenerator.saveToLibrary(name, prompt, tplSel.value, _lastAIRef);
+      this.refreshLibrary();
+      this.setStatus('✓ Prompt salvato in library: ' + name, true);
+    });
+
+    // queue button (placeholder — shows queue count)
+    $('aiQueueBtn').addEventListener('click', () => {
+      const q = AIGenerator.getQueue();
+      if (!q.length) { alert('Queue vuota. Seleziona template e usa "Aggiungi a queue"'); return; }
+      alert('Queue: ' + q.length + ' items\n' + q.map((q, i) => i + '. ' + (AIGenerator.TEMPLATES[q.templateId]?.label || q.templateId)).join('\n'));
+    });
+
     // genera
     $('aiGenBtn').addEventListener('click', async () => {
       const prompt = $('aiPrompt').value.trim();
@@ -231,25 +302,22 @@ const App = {
       $('aiPreview').innerHTML = '';
       $('aiGenBtn').disabled = true;
       try {
+        const ref = _lastAIRef || AIGenerator.getReference()?.dataUrl || null;
         const result = await AIGenerator.generate(prompt, size, (msg) => {
           $('aiStatus').textContent = '⏳ ' + msg;
-        });
-        // salva prompt in history
+        }, ref);
         AIGenerator.addHistory(prompt, tplSel.value);
-        // mostra preview
         const img = new Image();
         img.onload = () => {
-          // salva il canvas per gli editor
           const cnv = document.createElement('canvas');
           cnv.width = img.naturalWidth; cnv.height = img.naturalHeight;
           cnv.getContext('2d').drawImage(img, 0, 0);
           this._lastAICanvas = cnv;
           this._lastAIPrompt = prompt;
-          $('aiPreview').innerHTML = `<canvas id="aiPreviewCanvas" style="max-width:200px; max-height:200px; image-rendering:pixelated; border:1px solid #34344a; border-radius:6px"></canvas>
-            <div class="muted" style="font-size:11px; margin-top:4px">${img.naturalWidth}×${img.naturalHeight}px generati</div>`;
+          $('aiPreview').innerHTML = `<canvas id="aiPreviewCanvas" style="max-width:200px; max-height:200px; border:1px solid #34344a; border-radius:6px"></canvas>
+            <div class="muted" style="font-size:11px; margin-top:4px">${img.naturalWidth}×${img.naturalHeight}px generati${ref ? ' (con reference)' : ''}</div>`;
           const pc = $('aiPreviewCanvas');
           pc.getContext('2d').drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, pc.width, pc.height);
-          // show actions
           $('aiActions').style.display = '';
           $('aiStatus').textContent = '✓ Generata. Scegli cosa fare:';
         };
@@ -265,20 +333,17 @@ const App = {
       if (!this._lastAICanvas) return;
       const w = +$('aiFrameW').value || this._lastAICanvas.width;
       const h = +$('aiFrameH').value || this._lastAICanvas.height;
-      // ridimensiona al frame WxH voluto
       const cnv = document.createElement('canvas');
       cnv.width = w; cnv.height = h;
       const ctx = cnv.getContext('2d');
-      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingEnabled = true;
       ctx.drawImage(this._lastAICanvas, 0, 0, this._lastAICanvas.width, this._lastAICanvas.height, 0, 0, w, h);
       PixelEditor.openCanvas(cnv, 'AI Sprite — ' + (this._lastAIPrompt || '').slice(0, 40), w, 'ai-' + Date.now());
     });
     $('aiToFrame').addEventListener('click', () => {
       if (!this._lastAICanvas) return;
-      const w = +$('aiFrameW').value || 80;
-      const h = +$('aiFrameH').value || 80;
-      // genera uno "sheet" con il numero di frame che ci stanno orizzontalmente
-      // ridimensiona il canvas AI a un multiplo esatto di w*h
+      const w = +$('aiFrameW').value || 150;
+      const h = +$('aiFrameH').value || 160;
       const sourceW = this._lastAICanvas.width;
       const sourceH = this._lastAICanvas.height;
       const cols = Math.max(1, Math.floor(sourceW / w));
@@ -286,9 +351,8 @@ const App = {
       const sheetCnv = document.createElement('canvas');
       sheetCnv.width = cols * w; sheetCnv.height = rows * h;
       const ctx = sheetCnv.getContext('2d');
-      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingEnabled = true;
       ctx.drawImage(this._lastAICanvas, 0, 0, sourceW, sourceH, 0, 0, sheetCnv.width, sheetCnv.height);
-      // simula il flow del frame editor: crea frames array
       const frames = [];
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
         const f = document.createElement('canvas');
@@ -296,12 +360,10 @@ const App = {
         f.getContext('2d').drawImage(sheetCnv, c * w, r * h, w, h, 0, 0, w, h);
         frames.push(f);
       }
-      // apri frame editor con path virtuale
       FrameEditor.spritePath = 'ai-generated-' + Date.now();
       FrameEditor.frameW = w; FrameEditor.frameH = h;
       FrameEditor.frames = frames;
       FrameEditor.selected = new Set();
-      // forza UI
       document.getElementById('frameTitle').textContent = 'Frame Editor — AI Generata';
       document.getElementById('framePath').textContent = FrameEditor.spritePath + ' · ' + w + '×' + h + ' · ' + frames.length + ' frame';
       document.getElementById('frameFrameW').value = w;
@@ -318,6 +380,47 @@ const App = {
       a.click();
     });
     this.refreshHistory();
+    this.refreshLibrary();
+  },
+
+  _showRefPreview() {
+    const el = this.$('aiRefPreview');
+    if (!el) return;
+    const ref = AIGenerator.getReference();
+    if (ref) {
+      el.innerHTML = '<span class="muted" style="font-size:11px">Reference: ' + ref.description + '</span> <img src="' + ref.dataUrl + '" style="max-width:80px; max-height:80px; border-radius:4px; vertical-align:middle; margin-left:8px">';
+    } else {
+      el.innerHTML = '<span class="muted" style="font-size:11px">Nessun reference impostato</span>';
+    }
+  },
+
+  refreshLibrary() {
+    const el = this.$('aiLibrary');
+    if (!el) return;
+    const lib = AIGenerator.getLibrary();
+    if (!lib.length) { el.innerHTML = '<span class="muted">nessun prompt salvato</span>'; return; }
+    el.innerHTML = lib.map(item => {
+      const tplName = item.templateId ? AIGenerator.TEMPLATES[item.templateId]?.label || '' : '';
+      return `<div class="ai-hist-row" style="display:flex; gap:6px; padding:6px; border:1px solid #2c2c40; border-radius:6px; margin-bottom:4px; align-items:center">
+        <button class="ai-lib-fav" data-name="${item.name}" style="font-size:14px; padding:2px 6px; color:${item.favorite ? '#ffcc00' : '#666'}">${item.favorite ? '★' : '☆'}</button>
+        ${item.reference ? '<span style="font-size:11px; color:#6fb3ff" title="ha reference">📷</span>' : ''}
+        <div style="flex:1; min-width:0">
+          <div style="font-size:12px; color:#ddd; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${item.name}</div>
+          <div style="font-size:10px; color:#888; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${item.prompt.slice(0, 80)}</div>
+        </div>
+        <button class="ai-lib-use" data-name="${item.name}" style="font-size:11px; padding:2px 8px">↻</button>
+        <button class="ai-lib-del" data-name="${item.name}" style="font-size:11px; padding:2px 8px; color:#ee5555">✕</button>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.ai-lib-fav').forEach(b => b.addEventListener('click', () => { AIGenerator.toggleLibraryFavorite(b.dataset.name); this.refreshLibrary(); }));
+    el.querySelectorAll('.ai-lib-use').forEach(b => b.addEventListener('click', () => {
+      const item = AIGenerator.getLibrary().find(i => i.name === b.dataset.name);
+      if (item) {
+        this.$('aiPrompt').value = item.prompt;
+        if (item.reference) { _lastAIRef = item.reference; AIGenerator.setReference(item.reference, item.name); this._showRefPreview(); }
+      }
+    }));
+    el.querySelectorAll('.ai-lib-del').forEach(b => b.addEventListener('click', () => { AIGenerator.removeFromLibrary(b.dataset.name); this.refreshLibrary(); }));
   },
 
   refreshHistory() {
