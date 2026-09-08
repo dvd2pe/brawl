@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Play New Character — Brawl Hero</title>
+<style>
+body { font-family: system-ui; background: #14141d; color: #e8e8f0; margin: 0; padding: 40px; text-align: center; }
+h1 { color: #fff; margin-bottom: 8px; font-size: 28px; }
+.sub { color: #9aa0b8; margin-bottom: 24px; font-size: 14px; }
+.btn { display: inline-block; background: #2f6fed; color: #fff; padding: 16px 40px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 18px; margin: 10px; }
+.btn:hover { background: #4581f5; }
+.info { background: #1a1a26; border: 1px solid #2c2c40; border-radius: 10px; padding: 20px; max-width: 500px; margin: 20px auto; text-align: left; font-size: 14px; color: #9aa0b8; line-height: 1.6; }
+.info b { color: #fff; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; max-width: 400px; margin: 20px auto; }
+.key { background: #23232f; border: 1px solid #34344a; border-radius: 6px; padding: 8px; font-size: 12px; text-align: center; }
+.key b { color: #6fb3ff; }
+</style>
+</head>
+<body>
+<h1>⚔️ Play with the New Character</h1>
+<div class="sub">The AI-generated fantasy knight is ready to play in tutorial-1</div>
+<a href="/studio-play.html" class="btn">▶ Play Now</a>
+<div class="info">
+  <b>Character:</b> Fantasy knight (blue armor, blonde hair, silver sword)<br>
+  <b>Generated with:</b> 2-pass AI workflow (reference + 15 poses)<br>
+  <b>Map:</b> tutorial-1 (default first level)<br>
+  <b>Skins:</b> 7 AnimationSheet props assigned to EntityPlayer<br><br>
+  <b>Controls:</b>
+  <div class="controls">
+    <div class="key"><b>WASD</b><br>Move</div>
+    <div class="key"><b>Arrows</b><br>Move</div>
+    <div class="key"><b>Space</b><br>Attack</div>
+    <div class="key"><b>Esc</b><br>Pause</div>
+  </div>
+</div>
+<p style="color:#666; font-size:12px">The game opens in a new tab. The bridge automatically applies the new character skins from localStorage.</p>
+</body>
+</html>
