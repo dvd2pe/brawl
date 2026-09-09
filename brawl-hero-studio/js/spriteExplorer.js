@@ -114,58 +114,182 @@ const SpriteExplorer = {
 
   renderTree(filter) {
     filter = (filter || '').toLowerCase();
-    const groups = {};
-    // raccogli sprite originali
+    
+    // === NEW: collect all sprites, then group by CHARACTER/ENTITY name, not by folder ===
+    // Strategy: extract the "entity name" from each path and group all sprites of the same entity together
+    // e.g. characters/bowldog/bowldog-throwdown.png + characters/bowldog/bowldog-walk.png → group "Bowldog"
+    // Also group all environments/* into one "Environments" section, all ui/* into "UI", etc.
+    
+    const allSprites = [];
     for (const tex of GameData.packer.json) {
       for (const path of Object.keys(tex.frames)) {
         if (filter && !path.toLowerCase().includes(filter)) continue;
-        const parts = path.split('/');
-        const folder = parts.slice(0, parts.length - 1).join('/');
-        (groups[folder] = groups[folder] || []).push(path);
+        allSprites.push(path);
       }
     }
-    // raccogli sprite custom dalle patch
+    // Custom additions
     const customs = [];
     try {
       const p = JSON.parse(localStorage.getItem('bhs_patches') || '{}');
       (p.additions || []).forEach(a => {
         if (filter && !a.path.toLowerCase().includes(filter)) return;
         customs.push(a.path);
-        const parts = a.path.split('/');
-        const folder = parts.slice(0, parts.length - 1).join('/');
-        (groups[folder] = groups[folder] || []).push(a.path);
+        allSprites.push(a.path);
       });
     } catch (e) {}
-    const folders = Object.keys(groups).sort();
-    let html = '';
-    for (const folder of folders) {
-      const short = folder.replace('media/graphics/game/', '');
-      // raggruppa sprite con prefisso comune dentro la cartella
-      const spriteGroups = this.detectGroups(groups[folder]);
-      const grouped = new Set();
-      Object.values(spriteGroups).forEach(arr => arr.forEach(p => grouped.add(p)));
-      const isCustomFolder = folder.includes('/custom');
 
-      html += `<details ${filter ? 'open' : ''}><summary>${short} <span class="count">${groups[folder].length}</span>${isCustomFolder ? ' <span class="custom-tag">★ mie</span>' : ''}</summary>`;
-
-      // prima i gruppi
-      for (const [gkey, gpaths] of Object.entries(spriteGroups).sort()) {
-        const gname = gkey.split('/').pop();
-        // scegli icona + descrizione in base al tipo di gruppo
-        const kind = this.groupKind(gname, gpaths);
-        const icon = kind === 'autotile' ? '🧩' : kind === 'effect' ? '✨' : kind === 'anim' ? '🎬' : '⚙';
-        const tag = kind === 'autotile' ? 'autotiling' : kind === 'effect' ? 'effetto runtime' : kind === 'anim' ? 'animazione' : 'gruppo';
-        html += `<div class="sprite-item sprite-group" data-group="${gkey}" title="${tag}: ${gpaths.length} sprite — ${gpaths.map(p => p.split('/').pop().replace('.png','')).join(', ')}"><span class="group-tag">${icon}</span> ${gname} <span class="group-kind">${tag}</span> <span class="count">${gpaths.length}</span></div>`;
+    // === Group by entity/category ===
+    // Categories: Characters, Environments, Effects, Projectiles, UI, Common, Custom
+    const categories = {};
+    for (const path of allSprites) {
+      const parts = path.replace('media/graphics/game/', '').split('/');
+      const topDir = parts[0]; // characters, environments, effects, projectiles, ui, common
+      let category, entityName, subPath;
+      
+      if (topDir === 'characters') {
+        // Group by character name (second folder level)
+        // e.g. characters/slime/slime-down.png → category="Characters", entity="Slime"
+        // e.g. characters/bowldog/bowldog-throwdown.png → category="Characters", entity="Bowldog"
+        // e.g. characters/player/walk-down.png → category="Characters", entity="Player"
+        // e.g. characters/cactus/cactusminion-down-walk.png → category="Characters", entity="Cactus"
+        if (parts.length >= 2) {
+          entityName = parts[1]; // slime, bowldog, player, cactus, mushroom, drone, etc.
+          // Clean up entity name
+          entityName = entityName.replace(/-/boss$/, ' Boss').replace(/-/minion$/, ' Minion');
+          entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+          // Special cases
+          if (entityName === 'Slime-boss') entityName = 'Slime Boss';
+          if (entityName === 'Drone-boss') entityName = 'Drone Boss';
+          if (entityName === 'Cactus-boss') entityName = 'Cactus Boss';
+          category = 'Characters';
+        } else {
+          category = 'Characters';
+          entityName = 'Other';
+        }
+      } else if (topDir === 'environments') {
+        // Group environments: tiles/ is autotiling, rest is objects
+        if (parts.length >= 2 && parts[1] === 'tiles') {
+          // tile-water-*, tile-ditch-* → group by tile type
+          if (parts.length >= 3) {
+            entityName = parts[2].replace(/^tile-/, '').split('-')[0]; // water, ditch
+            entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1) + ' Tiles';
+          } else {
+            entityName = 'Tiles';
+          }
+        } else {
+          // arena, plant1, plant2, plant3, tile-wall, tile-spike, gate-open, gate-close
+          entityName = parts[parts.length - 1].replace(/\.\w+$/, '').replace(/^tile-/, 'Tile: ').replace(/-/g, ' ');
+          entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+        }
+        category = 'Environments';
+      } else if (topDir === 'effects') {
+        // Group effects by prefix (drone-laser, healing, level-up, etc.)
+        const fileName = parts[parts.length - 1].replace(/\.\w+$/, '');
+        const prefix = fileName.split('-').slice(0, fileName.includes('-') ? 2 : 1).join('-');
+        entityName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+        // But only if it's a known group prefix; otherwise use the filename
+        const knownPrefixes = ['drone-laser', 'healing', 'level-up', 'bullet', 'shield', 'mushroom-spore'];
+        if (!knownPrefixes.some(kp => prefix.startsWith(kp))) {
+          entityName = fileName.charAt(0).toUpperCase() + fileName.slice(1);
+        }
+        category = 'Effects';
+      } else if (topDir === 'projectiles') {
+        category = 'Projectiles';
+        entityName = parts[parts.length - 1].replace(/\.\w+$/, '').replace(/-/g, ' ');
+        entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+      } else if (topDir === 'ui') {
+        // Group UI: buttons/, joystick/, abilities/ — group by subfolder
+        if (parts.length >= 2) {
+          entityName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1);
+          if (entityName === 'Buttons') entityName = 'Buttons';
+        } else {
+          entityName = parts[parts.length - 1].replace(/\.\w+$/, '').replace(/-/g, ' ');
+          entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+        }
+        category = 'UI';
+      } else if (topDir === 'common') {
+        category = 'Common';
+        entityName = parts[parts.length - 1].replace(/\.\w+$/, '').replace(/-/g, ' ');
+        entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+      } else if (topDir === 'pickups') {
+        category = 'Pickups';
+        entityName = parts[parts.length - 1].replace(/\.\w+$/, '').replace(/-/g, ' ');
+        entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+      } else if (topDir === 'custom') {
+        category = 'Custom';
+        entityName = parts[parts.length - 1].replace(/\.\w+$/, '').replace(/-/g, ' ');
+        entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
+      } else {
+        category = 'Other';
+        entityName = parts[parts.length - 1].replace(/\.\w+$/, '').replace(/-/g, ' ');
+        entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
       }
-      // poi le sprite non raggruppate
-      for (const p of groups[folder].sort()) {
-        if (grouped.has(p)) continue;
-        const name = p.split('/').pop();
-        const isCustom = customs.includes(p);
-        html += `<div class="sprite-item${isCustom ? ' sprite-custom' : ''}" data-path="${p}" title="${isCustom ? 'sprite salvata da te (in localStorage)' : ''}">${isCustom ? '<span class="custom-tag">★</span> ' : ''}${name}</div>`;
-      }
-      html += '</details>';
+      
+      const key = category + '/' + entityName;
+      if (!categories[key]) categories[key] = [];
+      categories[key].push(path);
     }
+
+    // === Render the tree grouped by Category → Entity ===
+    const categoryOrder = ['Characters', 'Environments', 'Effects', 'Projectiles', 'UI', 'Pickups', 'Common', 'Custom', 'Other'];
+    const categoryIcons = {
+      'Characters': '🧑', 'Environments': '🌍', 'Effects': '✨', 'Projectiles': '🎯',
+      'UI': '🖥️', 'Pickups': '🎁', 'Common': '📦', 'Custom': '★', 'Other': '📂'
+    };
+
+    let html = '';
+    for (const cat of categoryOrder) {
+      const catEntries = Object.entries(categories).filter(([k]) => k.startsWith(cat + '/'));
+      if (!catEntries.length) continue;
+      const totalCount = catEntries.reduce((a, [_, v]) => a + v.length, 0);
+      const icon = categoryIcons[cat] || '📂';
+      
+      html += `<details ${filter ? 'open' : ''}><summary>${icon} ${cat} <span class="count">${totalCount}</span></summary>`;
+      
+      // Sort entities alphabetically
+      catEntries.sort(([a], [b]) => a.localeCompare(b));
+      
+      for (const [key, paths] of catEntries) {
+        const entityName = key.split('/').slice(1).join('/');
+        const isCustom = cat === 'Custom';
+        
+        // Check if this entity has sub-groups (like walk/throw directions)
+        const spriteGroups = this.detectGroups(paths);
+        const grouped = new Set();
+        Object.values(spriteGroups).forEach(arr => arr.forEach(p => grouped.add(p)));
+        
+        // If 2+ sprites and they have sub-groups, show as expandable entity
+        if (paths.length > 1) {
+          html += `<details style="margin-left:12px"><summary>${entityName} <span class="count">${paths.length}</span>${isCustom ? ' <span class="custom-tag">★</span>' : ''}</summary>`;
+          
+          // Show sub-groups (animations/autotiling)
+          for (const [gkey, gpaths] of Object.entries(spriteGroups).sort()) {
+            const gname = gkey.split('/').pop();
+            const kind = this.groupKind(gname, gpaths);
+            const gIcon = kind === 'autotile' ? '🧩' : kind === 'effect' ? '✨' : kind === 'anim' ? '🎬' : '⚙';
+            const gTag = kind === 'autotile' ? 'autotiling' : kind === 'effect' ? 'effetto' : kind === 'anim' ? 'anim' : 'gruppo';
+            html += `<div class="sprite-item sprite-group" data-group="${gkey}" style="margin-left:12px" title="${gTag}: ${gpaths.length} sprite"><span class="group-tag">${gIcon}</span> ${gname} <span class="group-kind">${gTag}</span> <span class="count">${gpaths.length}</span></div>`;
+          }
+          
+          // Show individual sprites not in any group
+          for (const p of paths.sort()) {
+            if (grouped.has(p)) continue;
+            const name = p.split('/').pop();
+            const pIsCustom = customs.includes(p);
+            html += `<div class="sprite-item${pIsCustom ? ' sprite-custom' : ''}" data-path="${p}" style="margin-left:12px">${pIsCustom ? '<span class="custom-tag">★</span> ' : ''}${name}</div>`;
+          }
+          html += `</details>`;
+        } else {
+          // Single sprite — show directly
+          const p = paths[0];
+          const name = p.split('/').pop();
+          const pIsCustom = customs.includes(p);
+          html += `<div class="sprite-item${pIsCustom ? ' sprite-custom' : ''}" data-path="${p}" style="margin-left:12px">${entityName}${pIsCustom ? ' <span class="custom-tag">★</span>' : ''}</div>`;
+        }
+      }
+      html += `</details>`;
+    }
+    
     this.listEl.innerHTML = html || '<p class="muted">Nessuna sprite</p>';
     this.listEl.querySelectorAll('.sprite-item').forEach(el => {
       el.addEventListener('click', () => {
