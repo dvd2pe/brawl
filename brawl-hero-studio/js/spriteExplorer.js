@@ -155,7 +155,7 @@ const SpriteExplorer = {
         if (parts.length >= 2) {
           entityName = parts[1]; // slime, bowldog, player, cactus, mushroom, drone, etc.
           // Clean up entity name
-          entityName = entityName.replace(/-/boss$/, ' Boss').replace(/-/minion$/, ' Minion');
+          entityName = entityName.replace(/-boss$/, ' Boss').replace(/-minion$/, ' Minion');
           entityName = entityName.charAt(0).toUpperCase() + entityName.slice(1);
           // Special cases
           if (entityName === 'Slime-boss') entityName = 'Slime Boss';
