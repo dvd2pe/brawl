@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Paladin — sprite-gen + zai</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui; background: #14141d; color: #e8e8f0; padding: 20px; }
+h1 { color: #fff; margin-bottom: 4px; font-size: 24px; }
+.sub { color: #9aa0b8; margin-bottom: 20px; font-size: 14px; }
+.section { background: #1a1a26; border: 1px solid #2c2c40; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.section h2 { color: #6fb3ff; font-size: 18px; margin-bottom: 12px; }
+.section p { color: #9aa0b8; font-size: 13px; margin-bottom: 12px; line-height: 1.5; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.card { text-align: center; }
+.card img { max-width: 100%; height: auto; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px; border-radius: 4px; }
+.card .lbl { font-size: 11px; color: #aab; margin-top: 4px; }
+.sheet-card { text-align: center; }
+.sheet-card img { max-width: 100%; height: auto; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px; border-radius: 4px; border: 1px solid #34344a; }
+.sheet-card .lbl { font-size: 12px; color: #6fb3ff; margin-top: 4px; font-weight: 500; }
+.sheet-card .info { font-size: 10px; color: #666; }
+.code { background: #23232f; padding: 8px 12px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #aab; margin: 8px 0; }
+.tag { display: inline-block; background: #55c97a33; color: #55c97a; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+.play-btn { display: inline-block; background: #2f6fed; color: #fff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px; }
+</style>
+</head>
+<body>
+<h1>🛡️ Paladin — Generated with sprite-gen + zai</h1>
+<div class="sub">Holy paladin in silver plate armor with gold trim, white cape, holy sword and shield. Generated using sprite-gen pipeline (prepare → gen-set → cutout) with z-ai-web-dev-sdk as provider.</div>
+
+<div class="section">
+  <h2>🔧 Pipeline <span class="tag">sprite-gen + zai</span></h2>
+  <div class="code">
+    sprite-gen prepare --character-id paladin --cell-width 150 --cell-height 160 --base-image knight.png<br>
+    sprite-gen gen-set --provider zai --states idle,attack<br>
+    sprite-gen cutout raw/idle.png --key white --strength 60<br>
+    sprite-gen cutout raw/attack.png --key white --strength 60<br>
+    # PIL: extract character → scale to 150x160 → build 7 sheets
+  </div>
+  <p>Generation time: ~42 seconds (21s idle + 21s attack). Cutout: white background removal with strength 60. Transparency: 59% (idle), 78% (attack).</p>
+</div>
+
+<div class="section">
+  <h2>📷 Raw AI Images</h2>
+  <div class="grid">
+    <div class="card"><img src="/ai-test/paladin/idle.png" style="max-height:200px"><div class="lbl">idle.png (raw, 1024×1024)</div></div>
+    <div class="card"><img src="/ai-test/paladin/attack.png" style="max-height:200px"><div class="lbl">attack.png (raw, 1024×1024)</div></div>
+    <div class="card"><img src="/ai-test/paladin/idle-cutout.png" style="max-height:200px"><div class="lbl">idle-cutout (59% transparent)</div></div>
+    <div class="card"><img src="/ai-test/paladin/attack-cutout.png" style="max-height:200px"><div class="lbl">attack-cutout (78% transparent)</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🧑 Extracted Frames (150×160)</h2>
+  <div class="grid">
+    <div class="card"><img src="/ai-test/paladin/idle-frame.png" style="max-height:120px"><div class="lbl">idle-frame</div></div>
+    <div class="card"><img src="/ai-test/paladin/attack-frame.png" style="max-height:120px"><div class="lbl">attack-frame</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📋 Final Sprite Sheets</h2>
+  <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))">
+    <div class="sheet-card"><img src="/ai-test/paladin/walk-down.png" style="max-height:60px"><div class="lbl">walk-down.png</div><div class="info">1800×160 · 12 frames</div></div>
+    <div class="sheet-card"><img src="/ai-test/paladin/walk-up.png" style="max-height:60px"><div class="lbl">walk-up.png</div><div class="info">1800×160 · 12 frames</div></div>
+    <div class="sheet-card"><img src="/ai-test/paladin/walk-side.png" style="max-height:60px"><div class="lbl">walk-side.png</div><div class="info">1800×160 · 12 frames</div></div>
+    <div class="sheet-card"><img src="/ai-test/paladin/walk-down-angle.png" style="max-height:60px"><div class="lbl">walk-down-angle.png</div><div class="info">1800×160 · 12 frames</div></div>
+    <div class="sheet-card"><img src="/ai-test/paladin/walk-up-angle.png" style="max-height:60px"><div class="lbl">walk-up-angle.png</div><div class="info">1800×160 · 12 frames</div></div>
+    <div class="sheet-card"><img src="/ai-test/paladin/throw-down.png" style="max-height:60px"><div class="lbl">throw-down.png</div><div class="info">1200×160 · 8 frames</div></div>
+    <div class="sheet-card"><img src="/ai-test/paladin/throw-up.png" style="max-height:60px"><div class="lbl">throw-up.png</div><div class="info">1200×160 · 8 frames</div></div>
+  </div>
+  <a href="/play-new-character.html" class="play-btn">▶ Play with this character</a>
+</div>
+
+<p style="text-align:center; margin-top:20px">
+  <a href="/studio/" style="color:#2f6fed; text-decoration:none; font-size:14px">← Studio</a> · 
+  <a href="/three-characters-gallery.html" style="color:#2f6fed; text-decoration:none; font-size:14px">← 3 Characters</a>
+</p>
+</body>
+</html>
