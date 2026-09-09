@@ -471,7 +471,7 @@ const MapEditor = {
 
   testInGame() {
     this.map.id = document.getElementById('mapId').value.trim() || this.map.id;
-    PlayStudio.playCustomMap(this.map);
+    PlayStudio.playCustomMapInline(this.map);
   }
 };
 window.MapEditor = MapEditor;

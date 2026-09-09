@@ -145,7 +145,40 @@ const PlayStudio = {
     this.refreshStatus();
   },
 
-  // ------------------------------------------------------------- comando play
+  // ------------------------------------------------------------- comando play — inline preview
+  // Instead of opening a new tab (which gets blocked), embed the game in an iframe
+  // inside the map tab. The iframe loads studio-play.html which runs the real engine.
+  playCustomMapInline(map) {
+    localStorage.setItem(this.PLAY_KEY, JSON.stringify({ type: 'custom', map }));
+    this._showInlineGame();
+  },
+  playBuiltinInline(id) {
+    localStorage.setItem(this.PLAY_KEY, JSON.stringify({ type: 'builtin', id }));
+    this._showInlineGame();
+  },
+  _showInlineGame() {
+    const canvasWrap = document.getElementById('mapCanvasWrap');
+    const gameWrap = document.getElementById('gamePreviewWrap');
+    const frame = document.getElementById('gamePreviewFrame');
+    const closeBtn = document.getElementById('gamePreviewClose');
+    if (!canvasWrap || !gameWrap || !frame) return;
+    // Hide the map canvas, show the game iframe
+    canvasWrap.style.display = 'none';
+    gameWrap.style.display = 'flex';
+    // Load the game in the iframe
+    frame.src = '../studio-play.html';
+    // Close button: restore the map canvas
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        gameWrap.style.display = 'none';
+        canvasWrap.style.display = 'flex';
+        frame.src = 'about:blank'; // unload the game
+        if (window.MapEditor) MapEditor.render(); // refresh the map
+      };
+    }
+  },
+
+  // ------------------------------------------------------------- comando play — new tab (fallback)
   // Apre studio-play.html per giocare la mappa con le patch applicate.
   // Usa un link diretto (non window.open) per evitare il blocco popup.
   // Crea un link temporaneo e clickalo — funziona anche dentro iframe.
@@ -208,9 +241,7 @@ const PlayStudio = {
     document.getElementById('closePlayLink').addEventListener('click', () => div.remove());
   },
 
-  // ------------------------------------------------------------- UI stato + version history
-  HISTORY_KEY: 'bhs_patch_history',
-
+  // ------------------------------------------------------------- UI stato
   refreshStatus() {
     const el = document.getElementById('patchStatus');
     if (!el) return;
@@ -221,34 +252,8 @@ const PlayStudio = {
       `sprite nuove: ${(p.additions || []).length}`,
       `skin entità: ${(p.skins || []).length}`,
       `entità custom: ${(p.customClasses || []).length}`,
-      `colori: ${p.colors && p.colors.arena ? 'arena=' + p.colors.arena : 'default'}`,
-      `<details><summary style="cursor:pointer; color:#6fb3ff; font-size:11px">📊 Version history (${this.getHistory().length})</summary><div id="patchHistoryList" style="font-size:11px; color:#888; padding:4px 12px"></div></details>`
+      `colori: ${p.colors && p.colors.arena ? 'arena=' + p.colors.arena : 'default'}`
     ].map(l => `<div>• ${l}</div>`).join('');
-    // Fill history list
-    const histEl = document.getElementById('patchHistoryList');
-    if (histEl) {
-      const hist = this.getHistory();
-      if (!hist.length) { histEl.innerHTML = '<span class="muted">nessuna modifica registrata</span>'; }
-      else {
-        histEl.innerHTML = hist.slice(0, 20).map(h => {
-          const dt = new Date(h.ts);
-          return `<div style="padding:2px 0; border-bottom:1px solid #23232f">${dt.toLocaleString()} — <span style="color:${h.color || '#55c97a'}">${h.action}</span>${h.detail ? ': ' + h.detail : ''}</div>`;
-        }).join('');
-      }
-    }
-  },
-
-  // Version history (like git log for patches)
-  getHistory() {
-    try { return JSON.parse(localStorage.getItem(this.HISTORY_KEY) || '[]'); }
-    catch { return []; }
-  },
-  addHistory(action, detail, color) {
-    const hist = this.getHistory();
-    hist.unshift({ action, detail, color, ts: Date.now() });
-    // Keep last 100 entries
-    localStorage.setItem(this.HISTORY_KEY, JSON.stringify(hist.slice(0, 100)));
-  },
-  clearHistory() { localStorage.removeItem(this.HISTORY_KEY); },
+  }
 };
 window.PlayStudio = PlayStudio;
