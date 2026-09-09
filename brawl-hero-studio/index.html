@@ -159,12 +159,13 @@
                         <span id="mapStats"></span>
                     </div>
                 </div>
-                <div id="gamePreviewWrap" class="panel" style="display:none; flex:1; flex-direction:column; padding:0; overflow:hidden; position:relative;">
+                <div id="gamePreviewWrap" class="panel" style="display:none; flex:1; flex-direction:column; padding:0; overflow:hidden; position:relative; min-height:500px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#1b1b28; border-bottom:1px solid #2c2c40;">
                         <b style="color:#55c97a">▶ Gioco in anteprima</b>
                         <button id="gamePreviewClose" class="primary" style="font-size:13px; padding:4px 12px">✕ Chiudi</button>
                     </div>
-                    <iframe id="gamePreviewFrame" style="flex:1; border:none; width:100%; background:#000;" allow="autoplay; fullscreen; gamepad"></iframe>
+                    <iframe id="gamePreviewFrame" style="flex:1; border:none; width:100%; min-height:400px; background:#000;" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write"></iframe>
+                    <div id="consoleLog" style="max-height:150px; overflow:auto; padding:8px 12px; background:#0d0d14; border-top:1px solid #2c2c40; font-family:monospace; font-size:11px;"></div>
                 </div>
                 <aside class="panel map-side">
                     <h3>Validazione</h3>

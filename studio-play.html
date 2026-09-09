@@ -142,6 +142,27 @@
 
     <script>
     /* ============================================================
+       CONSOLE INTERCEPTOR — sends logs to parent via postMessage
+       (so the Studio can show them in the console log panel)
+       ============================================================ */
+    (function () {
+        var orig = { log: console.log, error: console.error, warn: console.warn, info: console.info };
+        function send(text, level) {
+            try { parent.postMessage({ type: 'studio-log', text: String(text), level: level || 'info' }, '*'); } catch (e) {}
+        }
+        console.log = function () { send(Array.from(arguments).join(' '), 'info'); orig.log.apply(console, arguments); };
+        console.error = function () { send(Array.from(arguments).join(' '), 'error'); orig.error.apply(console, arguments); };
+        console.warn = function () { send(Array.from(arguments).join(' '), 'warn'); orig.warn.apply(console, arguments); };
+        console.info = function () { send(Array.from(arguments).join(' '), 'info'); orig.info.apply(console, arguments); };
+        window.addEventListener('error', function (e) {
+            send('JS ERROR: ' + e.message + ' @ ' + (e.filename || '') + ':' + (e.lineno || 0), 'error');
+        });
+        send('[bridge] Console interceptor attivo', 'ok');
+    })();
+    </script>
+
+    <script>
+    /* ============================================================
        BRAWL HERO STUDIO — BRIDGE
        Applica le patch create nello Studio (localStorage['bhs_patches'])
        e lancia la mappa richiesta (localStorage['bhs_pending_play'])

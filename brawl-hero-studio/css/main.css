@@ -240,3 +240,24 @@ code { background: #23232f; padding: 1px 5px; border-radius: 4px; font-size: .9e
 .frame-cell .frame-num input[type="checkbox"] {
     margin-right: 4px;
 }
+
+/* ============ inline game preview ============ */
+#gamePreviewWrap {
+  min-height: 400px;
+}
+#gamePreviewFrame {
+  min-height: 400px;
+  background: #000;
+}
+/* ============ console log panel ============ */
+#consoleLog {
+  background: #0d0d14; border: 1px solid #2c2c40; border-radius: 8px;
+  padding: 10px; font-family: monospace; font-size: 11px; color: #e8e8f0;
+  max-height: 200px; overflow: auto; margin-top: 8px;
+  white-space: pre-wrap; word-break: break-all;
+}
+.log-line { padding: 2px 0; border-bottom: 1px solid #1a1a26; }
+.log-error { color: #ee5555; }
+.log-warn { color: #e0b341; }
+.log-info { color: #6fb3ff; }
+.log-ok { color: #55c97a; }

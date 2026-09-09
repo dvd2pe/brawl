@@ -161,21 +161,79 @@ const PlayStudio = {
     const gameWrap = document.getElementById('gamePreviewWrap');
     const frame = document.getElementById('gamePreviewFrame');
     const closeBtn = document.getElementById('gamePreviewClose');
+    const logEl = document.getElementById('consoleLog');
     if (!canvasWrap || !gameWrap || !frame) return;
+    
+    // Clear log
+    if (logEl) logEl.innerHTML = '';
+    this._logLine(logEl, 'Avvio gioco...', 'info');
+    
+    // Listen for console messages from the game iframe (via postMessage)
+    this._msgHandler = (e) => {
+      if (e.data && e.data.type === 'studio-log') {
+        this._logLine(logEl, e.data.text, e.data.level || 'info');
+      }
+    };
+    window.addEventListener('message', this._msgHandler);
+    
     // Hide the map canvas, show the game iframe
     canvasWrap.style.display = 'none';
     gameWrap.style.display = 'flex';
+    
     // Load the game in the iframe
-    frame.src = '../studio-play.html';
-    // Close button: restore the map canvas
+    frame.src = '../studio-play.html?inline=1';
+    this._logLine(logEl, 'iframe src: ../studio-play.html', 'info');
+    
+    // Monitor the iframe load
+    frame.onload = () => {
+      this._logLine(logEl, 'iframe caricato ✓', 'ok');
+      // Try to inject a console interceptor into the iframe
+      try {
+        const fd = frame.contentDocument;
+        if (fd) {
+          const script = fd.createElement('script');
+          script.textContent = `
+            (function() {
+              const orig = { log: console.log, error: console.error, warn: console.warn };
+              function send(text, level) {
+                try { parent.postMessage({ type: 'studio-log', text: String(text), level }, '*'); } catch(e) {}
+              }
+              console.log = function(...a) { send(a.join(' '), 'info'); orig.log.apply(console, a); };
+              console.error = function(...a) { send(a.join(' '), 'error'); orig.error.apply(console, a); };
+              console.warn = function(...a) { send(a.join(' '), 'warn'); orig.warn.apply(console, a); };
+              window.addEventListener('error', function(e) { send('ERROR: ' + e.message + ' @ ' + e.filename + ':' + e.lineno, 'error'); });
+              send('Console interceptor attivo', 'ok');
+            })();
+          `;
+          fd.head ? fd.head.appendChild(script) : fd.documentElement.appendChild(script);
+          this._logLine(logEl, 'Console interceptor iniettato ✓', 'ok');
+        } else {
+          this._logLine(logEl, 'contentDocument null — cross-origin? Log non disponibili', 'warn');
+        }
+      } catch(e) {
+        this._logLine(logEl, 'Errore iniezione interceptor: ' + e.message, 'error');
+      }
+    };
+    
+    // Close button
     if (closeBtn) {
       closeBtn.onclick = () => {
         gameWrap.style.display = 'none';
         canvasWrap.style.display = 'flex';
-        frame.src = 'about:blank'; // unload the game
-        if (window.MapEditor) MapEditor.render(); // refresh the map
+        frame.src = 'about:blank';
+        if (this._msgHandler) window.removeEventListener('message', this._msgHandler);
+        if (window.MapEditor) MapEditor.render();
       };
     }
+  },
+  
+  _logLine(logEl, text, level) {
+    if (!logEl) return;
+    const div = document.createElement('div');
+    div.className = 'log-line log-' + (level || 'info');
+    div.textContent = new Date().toLocaleTimeString() + ' ' + text;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
   },
 
   // ------------------------------------------------------------- comando play — new tab (fallback)
