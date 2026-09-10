@@ -82,8 +82,12 @@ const App = {
   },
 
   initAssetsTab() {
-    const $ = id => this.$(id);
+    const $ = (id) => { const el = this.$(id); return el; };
+    const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+    const val = (id) => { const el = $(id); return el ? el.value : ''; };
 
+    // Old asset tab code (elements may not exist in new sub-tab layout)
+    try {
     // --- nuova sprite
     $('newSpriteBtn').addEventListener('click', () => {
       const name = $('newSpriteName').value.trim() || ('creazione-' + Date.now() % 10000);
@@ -195,6 +199,7 @@ const App = {
     const refBtn = $('refreshSpritesBtn');
     if (refBtn) refBtn.addEventListener('click', () => { this.refreshMySprites(); if (window.SpriteExplorer) SpriteExplorer.renderTree(''); this.setStatus('Lista aggiornata', true); });
 
+    } catch(e) { /* old elements may not exist in new layout */ }
     this.refreshCustomList();
     this.refreshMySprites();
     this.initAIGenerator();

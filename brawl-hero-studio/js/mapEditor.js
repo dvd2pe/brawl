@@ -91,7 +91,7 @@ const MapEditor = {
     this.render();
   },
 
-  resize() {
+  resize() { if (!this.map || !this.map.tiles) return;
     const W = this.map.tiles[0].length * 60, H = this.map.tiles.length * 60;
     this.canvas.width = W; this.canvas.height = H;
     const maxH = window.innerHeight - 260;
