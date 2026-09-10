@@ -164,7 +164,7 @@
                         <b style="color:#55c97a">▶ Gioco in anteprima</b>
                         <button id="gamePreviewClose" class="primary" style="font-size:13px; padding:4px 12px">✕ Chiudi</button>
                     </div>
-                    <iframe id="gamePreviewFrame" style="flex:1; border:none; width:100%; min-height:400px; background:#000;" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write"></iframe>
+                    <iframe id="gamePreviewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" style="flex:1; border:none; width:100%; min-height:400px; background:#000;" allow="autoplay; fullscreen; gamepad; clipboard-read; clipboard-write"></iframe>
                     <div id="consoleLog" style="max-height:150px; overflow:auto; padding:8px 12px; background:#0d0d14; border-top:1px solid #2c2c40; font-family:monospace; font-size:11px;"></div>
                 </div>
                 <aside class="panel map-side">
@@ -187,117 +187,132 @@
 
         <!-- ============ ASSET & GIOCA ============ -->
         <section id="tab-assets" class="tab-content">
-            <div class="assets-grid">
-                <div class="panel">
-                    <h3>✚ Nuova sprite (pixel art)</h3>
-                    <label>Nome <input id="newSpriteName" placeholder="mia-creazione"></label>
-                    <label>Larghezza frame <input id="newSpriteW" type="number" value="80" min="1"></label>
-                    <label>Altezza frame <input id="newSpriteH" type="number" value="80" min="1"></label>
-                    <label>Numero frame <input id="newSpriteFrames" type="number" value="4" min="1" max="32"></label>
-                    <button id="newSpriteBtn" class="primary">Crea e disegna</button>
-                    <p class="hint">Sprite vuota da disegnare pixel per pixel. Aggiunta a texture-2 (repack).</p>
-                </div>
+            <nav class="asset-subnav">
+                <button class="subnav-btn active" data-subtab="sub-characters">🧑 Characters</button>
+                <button class="subnav-btn" data-subtab="sub-environments">🌍 Environments</button>
+                <button class="subnav-btn" data-subtab="sub-effects">✨ Effects</button>
+                <button class="subnav-btn" data-subtab="sub-ui">🖥️ UI</button>
+                <button class="subnav-btn" data-subtab="sub-my">★ My Assets</button>
+            </nav>
 
-                <div class="panel">
-                    <h3>✨ AI Sprite Generator</h3>
-                    <p class="hint">Genera sprite con AI (z-ai-web-dev-sdk). Scegli un template per precompilare prompt + dimensioni, oppure scrivi il tuo prompt.</p>
-                    <label>Template
-                        <select id="aiTemplate">
-                            <option value="">— custom (no template) —</option>
-                        </select>
-                    </label>
-                    <label>Prompt
-                        <textarea id="aiPrompt" rows="3" placeholder="es. pixel art fire slime, 80x81px per frame, 4 frames idle animation, transparent background"></textarea>
-                    </label>
-                    <label>Size AI (immagine generata)
-                        <select id="aiSize">
-                            <option value="1024x1024" selected>1024×1024 (square)</option>
-                            <option value="768x1344">768×1344 (portrait)</option>
-                            <option value="1344x768">1344×768 (landscape)</option>
-                        </select>
-                    </label>
-                    <label>Frame W (dopo generazione) <input id="aiFrameW" type="number" value="80" min="1"></label>
-                    <label>Frame H (dopo generazione) <input id="aiFrameH" type="number" value="80" min="1"></label>
+            <!-- SUB-TAB: CHARACTERS -->
+            <div id="sub-characters" class="subtab-content active">
+                <div class="asset-panel">
+                    <h3>✨ AI Character Generator</h3>
+                    <p class="hint">Generate character animation frames. First frame becomes reference for consistency.</p>
+                    <label>Character description <textarea id="aiCharDesc" rows="2" placeholder="A holy paladin with silver armor and glowing sword"></textarea></label>
+                    <label>Action <select id="aiCharAction">
+                        <option value="walk-down-rest">Walk Down — Rest</option>
+                        <option value="walk-down-step1">Walk Down — Left Leg</option>
+                        <option value="walk-down-step2">Walk Down — Right Leg</option>
+                        <option value="walk-up-rest">Walk Up — Rest</option>
+                        <option value="walk-side-rest">Walk Side — Rest</option>
+                        <option value="attack-raise">Attack — Raise</option>
+                        <option value="attack-swing">Attack — Swing</option>
+                        <option value="hurt">Hurt</option>
+                    </select></label>
                     <div class="row">
-                        <button id="aiGenBtn" class="primary">✨ Genera</button>
-                        <button id="aiFillBtn" title="Riempie con template selezionato">↻ Usa template</button>
+                        <button id="aiCharGenBtn" class="primary">✨ Generate Frame</button>
+                        <button id="aiCharSetRef">↻ Set Ref</button>
+                        <button id="aiCharClearRef">✕ Clear</button>
                     </div>
-                    <div id="aiStatus" class="muted" style="font-size:12px"></div>
-                    <div id="aiPreview" style="margin-top:8px"></div>
-                    <div class="row" id="aiActions" style="display:none">
-                        <button id="aiToPixel" class="primary">✏️ Apri Pixel Editor</button>
-                        <button id="aiToFrame" class="primary">✂️ Apri Frame Editor</button>
-                        <button id="aiDownload">⬇ Salva PNG</button>
+                    <div id="aiCharStatus" class="muted" style="font-size:12px"></div>
+                    <div id="aiCharPreview" style="margin-top:8px"></div>
+                    <div class="row" id="aiCharActions" style="display:none">
+                        <button id="aiCharToPixel" class="primary">✏️ Pixel Edit</button>
+                        <button id="aiCharDownload">⬇ PNG</button>
                     </div>
-                    <h4>📜 History (ultimi 50)</h4>
-                    <div id="aiHistory" class="validation" style="max-height:240px; overflow:auto"></div>
+                    <div id="aiCharFrames" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px"></div>
+                    <button id="aiCharBuildSheet" class="primary" style="display:none; margin-top:8px">📋 Build Sheet from Frames</button>
                 </div>
-
-                <div class="panel">
-                    <h3>📤 Upload PNG → entità custom</h3>
-                    <p class="hint">Carica uno sprite PNG (es. generato con IA) e diventa un nuovo tipo di elemento piazzabile nella mappa. Il gioco lo renderizza nel motore vero.</p>
-                    <label>Nome classe
-                        <input id="upClassName" placeholder="es. MuroDiPietra (verrà EntityWallMuroDiPietra)">
-                    </label>
-                    <label>Tipo base
-                        <select id="upBaseClass">
-                            <option value="EntityWall">Muro (EntityWall)</option>
-                            <option value="EntitySpike">Spuntoni (EntitySpike)</option>
-                            <option value="EntitySlime">Slime (EntitySlime)</option>
-                            <option value="EntityMushroom">Mushroom (EntityMushroom)</option>
-                            <option value="EntityBowldog">Bowldog (EntityBowldog)</option>
-                            <option value="EntityCactus">Cactus (EntityCactus)</option>
-                            <option value="EntityDrone">Drone (EntityDrone)</option>
-                        </select>
-                    </label>
-                    <label>Larghezza frame <input id="upFrameW" type="number" value="60" min="1"></label>
-                    <label>Altezza frame <input id="upFrameH" type="number" value="60" min="1"></label>
-                    <label>Numero frame <input id="upFrames" type="number" value="1" min="1" max="32"></label>
-                    <label class="btn-file">📁 Scegli PNG<input type="file" id="upFile" accept="image/*" hidden></label>
-                    <span id="upFileLabel" class="muted">nessun file</span>
-                    <button id="upApplyBtn" class="primary">Crea entità custom</button>
-                    <h4>Elementi custom creati:</h4>
-                    <div id="upCustomList" class="validation">nessuno</div>
-                </div>
-
-                <div class="panel">
-                    <h3>📦 Le mie sprite salvate</h3>
-                    <p class="hint">Tutte le sprite create/modificate (in localStorage). Clicca per aprirle nell'editor o esporta su disco.</p>
-                    <div id="mySprites" class="validation"><span class="muted">nessuna sprite salvata</span></div>
-                    <button id="exportAllBtn">⬇ Esporta tutte su disco (zip JSON)</button>
-                    <button id="refreshSpritesBtn">↻ Aggiorna lista</button>
-                </div>
-
-                <div class="panel">
-                    <h3>🎭 Skin entità</h3>
-                    <p class="hint">Sostituisci la grafica di una classe di gioco con una sprite dell'atlante (anche una tua).</p>
-                    <label>Classe <select id="skinClass"></select></label>
+                <div class="asset-panel">
+                    <h3>🎭 Reskin Character</h3>
+                    <label>Class <select id="skinClass"></select></label>
                     <label>Slot <select id="skinProp"></select></label>
-                    <label>Sprite sorgente <select id="skinSource"></select></label>
-                    <button id="skinApplyBtn" class="primary">Applica skin</button>
+                    <label>Source <select id="skinSource"></select></label>
+                    <button id="skinApplyBtn" class="primary">Apply Skin</button>
                 </div>
-
-                <div class="panel">
-                    <h3>🎨 Colori arena</h3>
-                    <p class="hint">Cambia il colore di sfondo dell'arena. Salvato nelle patch e applicato quando giochi.</p>
-                    <label>Sfondo arena <input type="color" id="colorArena" value="#93bf45"></label>
-                    <button id="colorApplyBtn" class="primary">Applica colore</button>
-                    <p class="hint">Default: <code>#93bf45</code> (verde oliva originale).</p>
+                <div class="asset-panel">
+                    <h3>📤 Custom Entity</h3>
+                    <label>Name <input id="upClassName" placeholder="FireWall"></label>
+                    <label>Base <select id="upBaseClass"><option value="EntityWall">Wall</option><option value="EntitySpike">Spike</option><option value="EntitySlime">Slime</option><option value="EntityMushroom">Mushroom</option><option value="EntityBowldog">Bowldog</option><option value="EntityCactus">Cactus</option><option value="EntityDrone">Drone</option></select></label>
+                    <label>W <input id="upFrameW" type="number" value="60"></label>
+                    <label>H <input id="upFrameH" type="number" value="60"></label>
+                    <label>Frames <input id="upFrames" type="number" value="1"></label>
+                    <label class="btn-file">📁 PNG<input type="file" id="upFile" accept="image/*" hidden></label>
+                    <span id="upFileLabel" class="muted">no file</span>
+                    <button id="upApplyBtn" class="primary">Create</button>
+                    <div id="upCustomList" class="validation" style="margin-top:8px">none</div>
                 </div>
+            </div>
 
-                <div class="panel">
-                    <h3>▶ Gioca</h3>
-                    <label>Mappa
-                        <select id="playMapSelect"></select>
-                    </label>
+            <!-- SUB-TAB: ENVIRONMENTS -->
+            <div id="sub-environments" class="subtab-content" style="display:none">
+                <div class="asset-panel">
+                    <h3>✨ AI Environment Generator</h3>
+                    <label>Template <select id="aiEnvTemplate"><option value="">custom</option></select></label>
+                    <label>Prompt <textarea id="aiEnvPrompt" rows="2" placeholder="grass terrain tile, top-down"></textarea></label>
+                    <label>Size <select id="aiEnvSize"><option value="1024x1024">1024</option><option value="1344x768">Landscape</option></select></label>
+                    <label>W <input id="aiEnvFrameW" type="number" value="60"></label>
+                    <label>H <input id="aiEnvFrameH" type="number" value="60"></label>
+                    <button id="aiEnvGenBtn" class="primary">✨ Generate</button>
+                    <div id="aiEnvStatus" class="muted" style="font-size:12px"></div>
+                    <div id="aiEnvPreview" style="margin-top:8px"></div>
+                </div>
+                <div class="asset-panel">
+                    <h3>🎨 Arena Color</h3>
+                    <label>BG <input type="color" id="colorArena" value="#93bf45"></label>
+                    <button id="colorApplyBtn" class="primary">Apply</button>
+                </div>
+            </div>
+
+            <!-- SUB-TAB: EFFECTS -->
+            <div id="sub-effects" class="subtab-content" style="display:none">
+                <div class="asset-panel">
+                    <h3>✨ AI Effect Generator</h3>
+                    <label>Template <select id="aiEffTemplate"><option value="">custom</option></select></label>
+                    <label>Prompt <textarea id="aiEffPrompt" rows="2" placeholder="explosion effect"></textarea></label>
+                    <label>Frames <input id="aiEffFrames" type="number" value="4"></label>
+                    <button id="aiEffGenBtn" class="primary">✨ Generate</button>
+                    <div id="aiEffStatus" class="muted" style="font-size:12px"></div>
+                    <div id="aiEffPreview" style="margin-top:8px"></div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB: UI -->
+            <div id="sub-ui" class="subtab-content" style="display:none">
+                <div class="asset-panel">
+                    <h3>✨ AI UI Generator</h3>
+                    <label>Template <select id="aiUiTemplate"><option value="">custom</option></select></label>
+                    <label>Prompt <textarea id="aiUiPrompt" rows="2" placeholder="green play button"></textarea></label>
+                    <button id="aiUiGenBtn" class="primary">✨ Generate</button>
+                    <div id="aiUiStatus" class="muted" style="font-size:12px"></div>
+                    <div id="aiUiPreview" style="margin-top:8px"></div>
+                </div>
+            </div>
+
+            <!-- SUB-TAB: MY ASSETS -->
+            <div id="sub-my" class="subtab-content" style="display:none">
+                <div class="asset-panel">
+                    <h3>📦 My Sprites</h3>
+                    <div id="mySprites" class="validation">none</div>
+                    <button id="exportAllBtn">⬇ Export All</button>
+                    <button id="refreshSpritesBtn">↻ Refresh</button>
+                </div>
+                <div class="asset-panel">
+                    <h3>▶ Play</h3>
+                    <label>Map <select id="playMapSelect"></select></label>
                     <div class="row">
-                        <button id="playModsBtn" class="primary">▶ Gioca con le modifiche</button>
-                        <button id="playDebugBtn">🔧 Con box debug</button>
+                        <button id="playModsBtn" class="primary">▶ Play with Mods</button>
+                        <button id="playDebugBtn">🔧 Debug</button>
                     </div>
-                    <p class="hint">«Gioco originale» (in alto) parte senza nessuna patch.</p>
-                    <h3>Stato patch</h3>
+                    <h3>Patch Status</h3>
                     <div id="patchStatus" class="validation"></div>
-                    <button id="clearPatchesBtn">🗑️ Rimuovi tutte le patch</button>
+                    <button id="clearPatchesBtn">🗑️ Clear Patches</button>
+                </div>
+                <div class="asset-panel">
+                    <h3>📚 Prompt Library</h3>
+                    <div id="aiLibrary" class="validation" style="max-height:200px; overflow:auto">empty</div>
                 </div>
             </div>
         </section>

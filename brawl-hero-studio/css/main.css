@@ -261,3 +261,22 @@ code { background: #23232f; padding: 1px 5px; border-radius: 4px; font-size: .9e
 .log-warn { color: #e0b341; }
 .log-info { color: #6fb3ff; }
 .log-ok { color: #55c97a; }
+
+/* ============ asset sub-tabs ============ */
+.asset-subnav {
+    display: flex; gap: 2px; padding: 8px 12px 0;
+    background: #1b1b28; border-bottom: 1px solid #2c2c40;
+}
+.subnav-btn {
+    border: 1px solid #2c2c40; border-bottom: none;
+    border-radius: 8px 8px 0 0; background: #181824; padding: 8px 16px;
+    font-size: 13px; color: #888;
+}
+.subnav-btn.active { background: #14141d; color: #fff; border-color: #4a4a68; }
+.subtab-content { padding: 12px; gap: 12px; flex-wrap: wrap; }
+.asset-panel {
+    background: #1a1a26; border: 1px solid #2c2c40;
+    border-radius: 10px; padding: 16px; flex: 1; min-width: 280px;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.asset-panel h3 { font-size: 15px; }

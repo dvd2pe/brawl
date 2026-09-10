@@ -29,6 +29,7 @@ const App = {
     SpriteExplorer.init(document.getElementById('tab-sprite'));
     this.initMapTab();
     this.initAssetsTab();
+    this.initSubTabs();
     this.populateToolThumbnails();
     PlayStudio.refreshStatus();
 
@@ -197,6 +198,114 @@ const App = {
     this.refreshCustomList();
     this.refreshMySprites();
     this.initAIGenerator();
+    this.initSubTabs();
+  },
+
+  // ------------------------------------------------------------- Sub-tab navigation + new generators
+  initSubTabs() {
+    const $ = id => this.$(id);
+
+    // Sub-tab switching
+    document.querySelectorAll('.subnav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.subnav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.subtab-content').forEach(c => c.style.display = 'none');
+        btn.classList.add('active');
+        const target = document.getElementById(btn.dataset.subtab);
+        if (target) target.style.display = '';
+      });
+    });
+
+    // === CHARACTER GENERATOR ===
+    let charRef = null;
+    let charFrames = [];
+    const renderCharFrames = () => {
+      const el = $('aiCharFrames');
+      if (!el) return;
+      el.innerHTML = '';
+      charFrames.forEach((f, i) => {
+        const cv = document.createElement('canvas');
+        cv.width = 75; cv.height = 80; cv.style.cssText = 'border-radius:4px; border:1px solid #34344a';
+        cv.getContext('2d').drawImage(f.canvas, 0, 0, f.canvas.width, f.canvas.height, 0, 0, 75, 80);
+        cv.title = 'Frame ' + i + ': ' + f.action;
+        el.appendChild(cv);
+      });
+      if ($('aiCharBuildSheet')) $('aiCharBuildSheet').style.display = charFrames.length >= 2 ? '' : 'none';
+    };
+
+    if ($('aiCharGenBtn')) $('aiCharGenBtn').addEventListener('click', async () => {
+      const desc = $('aiCharDesc')?.value.trim();
+      const action = $('aiCharAction')?.value || 'walk-down-rest';
+      if (!desc) { alert('Write a character description'); return; }
+      const actionDescs = {
+        'walk-down-rest': 'standing neutral, facing camera', 'walk-down-step1': 'walking LEFT leg forward, facing camera',
+        'walk-down-step2': 'walking RIGHT leg forward, facing camera', 'walk-up-rest': 'standing, back view',
+        'walk-side-rest': 'standing sideways right', 'attack-raise': 'raising weapon overhead, facing camera',
+        'attack-swing': 'swinging weapon down, facing camera', 'hurt': 'staggering backward, facing camera',
+      };
+      const prompt = AIGenerator.STYLE_PREFIX + ' — ' + desc + ', ' + (actionDescs[action] || 'standing') + '. Full body, centered, white bg. 150x160.';
+      $('aiCharStatus').textContent = '⏳ Generating...';
+      $('aiCharActions').style.display = 'none';
+      $('aiCharGenBtn').disabled = true;
+      try {
+        const result = await AIGenerator.generate(prompt, '1024x1024', m => $('aiCharStatus').textContent = '⏳ ' + m, charRef);
+        const img = new Image();
+        img.onload = () => {
+          const cnv = document.createElement('canvas');
+          cnv.width = img.naturalWidth; cnv.height = img.naturalHeight;
+          cnv.getContext('2d').drawImage(img, 0, 0);
+          this._lastAICanvas = cnv;
+          $('aiCharPreview').innerHTML = '<canvas style="max-width:200px; max-height:200px; border-radius:6px; border:1px solid #34344a"></canvas>';
+          $('aiCharPreview').querySelector('canvas').getContext('2d').drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, 200, 200);
+          $('aiCharActions').style.display = '';
+          $('aiCharStatus').textContent = '✓ Frame ' + (charFrames.length + 1) + (charRef ? ' (with ref)' : '');
+          charFrames.push({ canvas: cnv, action });
+          renderCharFrames();
+        };
+        img.src = 'data:image/png;base64,' + result.base64;
+      } catch (e) { $('aiCharStatus').textContent = '✗ ' + e.message; }
+      $('aiCharGenBtn').disabled = false;
+    });
+    if ($('aiCharSetRef')) $('aiCharSetRef').addEventListener('click', () => {
+      if (this._lastAICanvas) { charRef = this._lastAICanvas.toDataURL('image/png'); $('aiCharStatus').textContent = '✓ Reference set'; }
+    });
+    if ($('aiCharClearRef')) $('aiCharClearRef').addEventListener('click', () => { charRef = null; charFrames = []; renderCharFrames(); $('aiCharStatus').textContent = 'Cleared'; });
+    if ($('aiCharToPixel')) $('aiCharToPixel').addEventListener('click', () => { if (this._lastAICanvas) PixelEditor.openCanvas(this._lastAICanvas, 'AI Char', 150, 'ai-char-' + Date.now()); });
+    if ($('aiCharDownload')) $('aiCharDownload').addEventListener('click', () => { if (this._lastAICanvas) { const a = document.createElement('a'); a.href = this._lastAICanvas.toDataURL('image/png'); a.download = 'char-' + charFrames.length + '.png'; a.click(); } });
+    if ($('aiCharBuildSheet')) $('aiCharBuildSheet').addEventListener('click', () => {
+      if (charFrames.length < 2) { alert('Need 2+ frames'); return; }
+      const sheet = document.createElement('canvas');
+      sheet.width = 150 * charFrames.length; sheet.height = 160;
+      const ctx = sheet.getContext('2d');
+      charFrames.forEach((f, i) => ctx.drawImage(f.canvas, 0, 0, f.canvas.width, f.canvas.height, i * 150, 0, 150, 160));
+      PlayStudio.assignSkin('EntityPlayer', 'animSheet_walk_down', sheet, 150, 160);
+      PlayStudio.refreshStatus();
+      this.setStatus('✓ Sheet: ' + charFrames.length + ' frames → EntityPlayer skin', true);
+    });
+
+    // === ENV / EFFECT / UI GENERATORS ===
+    const wireGen = (genId, promptId, statusId, prevId) => {
+      const btn = $(genId); if (!btn) return;
+      btn.addEventListener('click', async () => {
+        const prompt = $(promptId)?.value.trim(); if (!prompt) { alert('Write a prompt'); return; }
+        $(statusId).textContent = '⏳ Generating...';
+        try {
+          const r = await AIGenerator.generate(AIGenerator.STYLE_PREFIX + ' — ' + prompt, '1024x1024', m => $(statusId).textContent = '⏳ ' + m);
+          const img = new Image();
+          img.onload = () => {
+            const cnv = document.createElement('canvas'); cnv.width = img.naturalWidth; cnv.height = img.naturalHeight; cnv.getContext('2d').drawImage(img, 0, 0);
+            this._lastAICanvas = cnv;
+            $(prevId).innerHTML = '<canvas style="max-width:200px; max-height:200px; border-radius:6px; border:1px solid #34344a"></canvas>';
+            $(prevId).querySelector('canvas').getContext('2d').drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, 200, 200);
+            $(statusId).textContent = '✓ Generated';
+          };
+          img.src = 'data:image/png;base64,' + r.base64;
+        } catch (e) { $(statusId).textContent = '✗ ' + e.message; }
+      });
+    };
+    wireGen('aiEnvGenBtn', 'aiEnvPrompt', 'aiEnvStatus', 'aiEnvPreview');
+    wireGen('aiEffGenBtn', 'aiEffPrompt', 'aiEffStatus', 'aiEffPreview');
+    wireGen('aiUiGenBtn', 'aiUiPrompt', 'aiUiStatus', 'aiUiPreview');
   },
 
   // ------------------------------------------------------------- AI Sprite Generator
