@@ -225,7 +225,7 @@ const App = {
         'walk-side-rest': 'standing sideways right', 'attack-raise': 'raising weapon overhead, facing camera',
         'attack-swing': 'swinging weapon down, facing camera', 'hurt': 'staggering backward, facing camera',
       };
-      const prompt = AIGenerator.STYLE_PREFIX + ' — ' + desc + ', ' + (actionDescs[action] || 'standing') + '. Full body, centered, white bg. 150x160.';
+      const prompt = AIGenerator.STYLE_PREFIX + ' — ' + desc + ', ' + (actionDescs[action] || 'standing') + '. Full body, centered, transparent background. 150x160 frame.';
       const st = $('aiCharStatus'); if (st) st.textContent = '⏳ Generating...';
       const acts = $('aiCharActions'); if (acts) acts.style.display = 'none';
       const btn = $('aiCharGenBtn'); if (btn) btn.disabled = true;
@@ -233,17 +233,45 @@ const App = {
         const result = await AIGenerator.generate(prompt, '1024x1024', m => { if (st) st.textContent = '⏳ ' + m; }, this._charRef);
         const img = new Image();
         img.onload = () => {
+          // Extract character: remove white/near-white bg, crop to bbox, scale to 150x160
+          const rawCnv = document.createElement('canvas');
+          rawCnv.width = img.naturalWidth; rawCnv.height = img.naturalHeight;
+          rawCnv.getContext('2d').drawImage(img, 0, 0);
+          // Remove white background (make transparent)
+          const rctx = rawCnv.getContext('2d');
+          const imgData = rctx.getImageData(0, 0, rawCnv.width, rawCnv.height);
+          const d = imgData.data;
+          for (let i = 0; i < d.length; i += 4) {
+            if (d[i] > 220 && d[i+1] > 220 && d[i+2] > 220) d[i+3] = 0; // transparent
+          }
+          rctx.putImageData(imgData, 0, 0);
+          // Crop to character bounding box
+          const arr = new Uint8ClampedArray(d);
+          let minX = rawCnv.width, minY = rawCnv.height, maxX = 0, maxY = 0;
+          for (let y = 0; y < rawCnv.height; y++) {
+            for (let x = 0; x < rawCnv.width; x++) {
+              const a = arr[(y * rawCnv.width + x) * 4 + 3];
+              if (a > 20) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+            }
+          }
+          const charW = maxX - minX + 1, charH = maxY - minY + 1;
+          // Scale to fit 150x160 maintaining aspect ratio, center on transparent canvas
           const cnv = document.createElement('canvas');
-          cnv.width = img.naturalWidth; cnv.height = img.naturalHeight;
-          cnv.getContext('2d').drawImage(img, 0, 0);
+          cnv.width = 150; cnv.height = 160;
+          const ctx2 = cnv.getContext('2d');
+          const scale = Math.min(150 / charW, 160 / charH);
+          const dw = charW * scale, dh = charH * scale;
+          ctx2.imageSmoothingEnabled = true;
+          ctx2.drawImage(rawCnv, minX, minY, charW, charH, (150 - dw) / 2, (160 - dh) / 2, dw, dh);
           this._lastAICanvas = cnv;
+          // Show preview
           const prev = $('aiCharPreview');
           if (prev) {
-            prev.innerHTML = '<canvas style="max-width:200px; max-height:200px; border-radius:6px; border:1px solid #34344a"></canvas>';
-            prev.querySelector('canvas').getContext('2d').drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, 200, 200);
+            prev.innerHTML = '<canvas style="max-width:200px; max-height:200px; border-radius:6px; border:1px solid #34344a; image-rendering:pixelated"></canvas>';
+            prev.querySelector('canvas').getContext('2d').drawImage(cnv, 0, 0, 150, 160, 0, 0, 200, 200);
           }
           if (acts) acts.style.display = '';
-          if (st) st.textContent = '✓ Frame ' + (this._charFrames.length + 1) + (this._charRef ? ' (with ref)' : '');
+          if (st) st.textContent = '✓ Frame ' + (this._charFrames.length + 1) + ' — transparent 150×160' + (this._charRef ? ' (with ref)' : '');
           this._charFrames.push({ canvas: cnv, action });
           this._renderCharFrames();
         };
@@ -311,13 +339,52 @@ const App = {
     const el = this.$('aiCharFrames');
     if (!el) return;
     el.innerHTML = '';
+    // Show frames as a horizontal strip (like game spritesheets) — first frame animated
+    if (this._charFrames.length === 0) return;
+    // Build a single canvas strip showing all frames side by side
+    const totalW = 150 * this._charFrames.length;
+    const stripCv = document.createElement('canvas');
+    stripCv.width = totalW; stripCv.height = 160;
+    const sctx = stripCv.getContext('2d');
     this._charFrames.forEach((f, i) => {
-      const cv = document.createElement('canvas');
-      cv.width = 75; cv.height = 80; cv.style.cssText = 'border-radius:4px; border:1px solid #34344a';
-      cv.getContext('2d').drawImage(f.canvas, 0, 0, f.canvas.width, f.canvas.height, 0, 0, 75, 80);
-      cv.title = 'Frame ' + i + ': ' + f.action;
-      el.appendChild(cv);
+      sctx.drawImage(f.canvas, i * 150, 0);
     });
+    // Show the strip scaled down + animate first frame
+    const displayCv = document.createElement('canvas');
+    const displayW = Math.min(totalW * 0.5, 600);
+    const displayH = 160 * (displayW / totalW);
+    displayCv.width = displayW; displayCv.height = displayH;
+    displayCv.style.cssText = 'border-radius:6px; border:1px solid #34344a; image-rendering:pixelated; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px';
+    const dctx = displayCv.getContext('2d');
+    dctx.imageSmoothingEnabled = false;
+    dctx.drawImage(stripCv, 0, 0, totalW, 160, 0, 0, displayW, displayH);
+    el.appendChild(displayCv);
+    // Add frame labels
+    const labelsDiv = document.createElement('div');
+    labelsDiv.style.cssText = 'display:flex; gap:0; font-size:10px; color:#888; margin-top:4px';
+    this._charFrames.forEach((f, i) => {
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'width:' + (displayW / this._charFrames.length) + 'px; text-align:center';
+      lbl.textContent = 'F' + i + ': ' + f.action.replace(/-/g, ' ').slice(0, 15);
+      labelsDiv.appendChild(lbl);
+    });
+    el.appendChild(labelsDiv);
+    // Animate: cycle through frames in the display canvas
+    if (this._charAnimTimer) clearInterval(this._charAnimTimer);
+    let animIdx = 0;
+    this._charAnimTimer = setInterval(() => {
+      if (this._charFrames.length < 2) return;
+      animIdx = (animIdx + 1) % this._charFrames.length;
+      dctx.clearRect(0, 0, displayW, displayH);
+      // Draw full strip
+      dctx.drawImage(stripCv, 0, 0, totalW, 160, 0, 0, displayW, displayH);
+      // Highlight current frame with border
+      const fw = displayW / this._charFrames.length;
+      dctx.strokeStyle = '#55c97a';
+      dctx.lineWidth = 2;
+      dctx.strokeRect(animIdx * fw, 0, fw, displayH);
+    }, 200); // 5fps animation preview
+    // Show build button
     const bs = this.$('aiCharBuildSheet');
     if (bs) bs.style.display = this._charFrames.length >= 2 ? '' : 'none';
   },

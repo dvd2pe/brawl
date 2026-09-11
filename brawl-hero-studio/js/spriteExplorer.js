@@ -8,7 +8,7 @@
 // - visualizza sheet multipli come strip affiancata (es. drone-laser-start+middle+end)
 const SpriteExplorer = {
   root: null, listEl: null, previewEl: null, infoEl: null,
-  animTimer: null, animFrame: 0, currentPath: null, currentSheet: null, zoom: 3,
+  animTimer: null, animFrame: 0, currentPath: null, currentSheet: null, zoom: 1,
   // manuale frame dims (per sheet senza AnimationSheet)
   manualFrameW: 0, manualFrameH: 0,
 
@@ -27,11 +27,15 @@ const SpriteExplorer = {
     const fwInput = root.querySelector('#spriteFrameW');
     const fhInput = root.querySelector('#spriteFrameH');
     const playBtn = root.querySelector('#spritePlayBtn');
-    const stopBtn = root.querySelector('#spriteStopBtn');
+
     if (fwInput) fwInput.addEventListener('change', e => { this.manualFrameW = +e.target.value || 0; this.renderPreview(); });
     if (fhInput) fhInput.addEventListener('change', e => { this.manualFrameH = +e.target.value || 0; this.renderPreview(); });
     if (playBtn) playBtn.addEventListener('click', () => this.togglePlay());
-    if (stopBtn) stopBtn.addEventListener('click', () => this.stopAnim());
+    // Hide play/stop buttons — autoplay handles everything
+    if (playBtn) playBtn.style.display = 'none';
+
+
+
     this.renderTree('');
   },
 
