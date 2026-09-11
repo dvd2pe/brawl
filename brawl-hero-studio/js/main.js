@@ -211,68 +211,118 @@ const App = {
       });
     });
 
-    // --- AI Character Generator (sequential frames with reference)
+    // --- AI Character Generator: generates FULL animation sequence (multi-frame sheet)
     this._charRef = null;
     this._charFrames = [];
 
     on('aiCharGenBtn', 'click', async () => {
       const desc = $('aiCharDesc')?.value.trim();
-      const action = $('aiCharAction')?.value || 'walk-down-rest';
+      const action = $('aiCharAction')?.value || 'walk-down';
       if (!desc) { alert('Write a character description'); return; }
-      const actionDescs = {
-        'walk-down-rest': 'standing neutral, facing camera', 'walk-down-step1': 'walking LEFT leg forward, facing camera',
-        'walk-down-step2': 'walking RIGHT leg forward, facing camera', 'walk-up-rest': 'standing, back view',
-        'walk-side-rest': 'standing sideways right', 'attack-raise': 'raising weapon overhead, facing camera',
-        'attack-swing': 'swinging weapon down, facing camera', 'hurt': 'staggering backward, facing camera',
+      
+      // Action configs: frame count + prompt for the full sequence
+      const actionConfigs = {
+        'walk-down':   { frames: 12, prompt: 'walk cycle facing towards the camera (down view). 12 sequential frames showing a complete walk cycle: rest, left leg forward, mid-step, right leg forward, rest, repeat. The character walks in place. Full body visible in each frame, centered.' },
+        'walk-up':     { frames: 12, prompt: 'walk cycle facing away from the camera (up view, back view). 12 sequential frames showing a complete walk cycle. Full body visible, centered.' },
+        'walk-side':   { frames: 12, prompt: 'walk cycle facing right (side profile view). 12 sequential frames showing a complete walk cycle. Full body visible, centered, facing right.' },
+        'attack':      { frames: 8,  prompt: 'attack animation facing towards the camera. 8 sequential frames showing: raise weapon overhead, wind up, strike downward, follow through, recover to rest. Full body visible, centered.' },
+        'idle':        { frames: 4,  prompt: 'idle breathing animation facing towards the camera. 4 sequential frames showing subtle breathing: chest expand, slight rise, chest contract, rest. Full body visible, centered.' },
+        'hurt':        { frames: 4,  prompt: 'hurt animation facing towards the camera. 4 sequential frames: stagger back, recoil, stumble, recover. Full body visible, centered.' },
       };
-      const prompt = AIGenerator.STYLE_PREFIX + ' — ' + desc + ', ' + (actionDescs[action] || 'standing') + '. Full body, centered, transparent background. 150x160 frame.';
-      const st = $('aiCharStatus'); if (st) st.textContent = '⏳ Generating...';
+      
+      const config = actionConfigs[action] || actionConfigs['walk-down'];
+      const N = config.frames;
+      
+      // Ask the AI for a horizontal strip of N frames
+      const prompt = AIGenerator.STYLE_PREFIX + ' — ' + desc + ', ' + config.prompt + 
+        ' IMPORTANT: Generate exactly ' + N + ' frames arranged horizontally in a single row, side by side, ' +
+        'each frame showing the SAME character at a different point in the animation. ' +
+        'Each frame is 150 pixels wide and 160 pixels tall, total image ' + (150*N) + 'x160 pixels. ' +
+        'The character must be the SAME in every frame (same design, same colors, same proportions). ' +
+        'Only the POSE should change between frames. Transparent background. ' +
+        'This is a game spritesheet — NOT a single illustration.';
+      
+      const st = $('aiCharStatus'); if (st) st.textContent = '⏳ Generating ' + N + ' frames...';
       const acts = $('aiCharActions'); if (acts) acts.style.display = 'none';
       const btn = $('aiCharGenBtn'); if (btn) btn.disabled = true;
+      
       try {
         const result = await AIGenerator.generate(prompt, '1024x1024', m => { if (st) st.textContent = '⏳ ' + m; }, this._charRef);
         const img = new Image();
         img.onload = () => {
-          // Extract character: remove white/near-white bg, crop to bbox, scale to 150x160
+          // The AI generated a 1024x1024 image. We need to:
+          // 1. Remove white/near-white background → transparent
+          // 2. Find the character content area
+          // 3. Slice it into N horizontal frames
+          // 4. Scale each to 150x160
+          
           const rawCnv = document.createElement('canvas');
           rawCnv.width = img.naturalWidth; rawCnv.height = img.naturalHeight;
           rawCnv.getContext('2d').drawImage(img, 0, 0);
-          // Remove white background (make transparent)
           const rctx = rawCnv.getContext('2d');
+          
+          // Remove white background
           const imgData = rctx.getImageData(0, 0, rawCnv.width, rawCnv.height);
           const d = imgData.data;
           for (let i = 0; i < d.length; i += 4) {
-            if (d[i] > 220 && d[i+1] > 220 && d[i+2] > 220) d[i+3] = 0; // transparent
+            if (d[i] > 220 && d[i+1] > 220 && d[i+2] > 220) d[i+3] = 0;
           }
           rctx.putImageData(imgData, 0, 0);
-          // Crop to character bounding box
+          
+          // Find the content bounding box (all non-transparent pixels)
           const arr = new Uint8ClampedArray(d);
           let minX = rawCnv.width, minY = rawCnv.height, maxX = 0, maxY = 0;
           for (let y = 0; y < rawCnv.height; y++) {
             for (let x = 0; x < rawCnv.width; x++) {
-              const a = arr[(y * rawCnv.width + x) * 4 + 3];
-              if (a > 20) { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
+              if (arr[(y * rawCnv.width + x) * 4 + 3] > 20) {
+                if (x < minX) minX = x; if (x > maxX) maxX = x;
+                if (y < minY) minY = y; if (y > maxY) maxY = y;
+              }
             }
           }
-          const charW = maxX - minX + 1, charH = maxY - minY + 1;
-          // Scale to fit 150x160 maintaining aspect ratio, center on transparent canvas
-          const cnv = document.createElement('canvas');
-          cnv.width = 150; cnv.height = 160;
-          const ctx2 = cnv.getContext('2d');
-          const scale = Math.min(150 / charW, 160 / charH);
-          const dw = charW * scale, dh = charH * scale;
-          ctx2.imageSmoothingEnabled = true;
-          ctx2.drawImage(rawCnv, minX, minY, charW, charH, (150 - dw) / 2, (160 - dh) / 2, dw, dh);
-          this._lastAICanvas = cnv;
+          const contentW = maxX - minX + 1;
+          const contentH = maxY - minY + 1;
+          
+          // Slice the content into N horizontal frames
+          const frameW = Math.floor(contentW / N);
+          this._charFrames = [];
+          
+          for (let i = 0; i < N; i++) {
+            const frame = document.createElement('canvas');
+            frame.width = 150; frame.height = 160;
+            const fctx = frame.getContext('2d');
+            // Extract this frame's slice from the raw image
+            const srcX = minX + i * frameW;
+            const srcSliceW = Math.min(frameW, contentW - i * frameW);
+            if (srcSliceW > 0) {
+              // Scale the slice to fit 150x160
+              const scale = Math.min(150 / srcSliceW, 160 / contentH);
+              const dw = srcSliceW * scale, dh = contentH * scale;
+              fctx.imageSmoothingEnabled = true;
+              fctx.drawImage(rawCnv, srcX, minY, srcSliceW, contentH, (150 - dw) / 2, (160 - dh) / 2, dw, dh);
+            }
+            this._charFrames.push({ canvas: frame, action: action + '-f' + i });
+          }
+          
+          // Save the strip as a single canvas for reference
+          const stripCnv = document.createElement('canvas');
+          stripCnv.width = 150 * N; stripCnv.height = 160;
+          const sctx = stripCnv.getContext('2d');
+          this._charFrames.forEach((f, i) => sctx.drawImage(f.canvas, i * 150, 0));
+          this._lastAICanvas = stripCnv;
+          
           // Show preview
           const prev = $('aiCharPreview');
           if (prev) {
-            prev.innerHTML = '<canvas style="max-width:200px; max-height:200px; border-radius:6px; border:1px solid #34344a; image-rendering:pixelated"></canvas>';
-            prev.querySelector('canvas').getContext('2d').drawImage(cnv, 0, 0, 150, 160, 0, 0, 200, 200);
+            const pw = Math.min(150 * N, 400);
+            const ph = Math.round(160 * (pw / (150 * N)));
+            prev.innerHTML = '<canvas style="max-width:' + pw + 'px; max-height:' + ph + 'px; border-radius:6px; border:1px solid #34344a; image-rendering:pixelated"></canvas>';
+            prev.querySelector('canvas').width = pw;
+            prev.querySelector('canvas').height = ph;
+            prev.querySelector('canvas').getContext('2d').drawImage(stripCnv, 0, 0, 150*N, 160, 0, 0, pw, ph);
           }
           if (acts) acts.style.display = '';
-          if (st) st.textContent = '✓ Frame ' + (this._charFrames.length + 1) + ' — transparent 150×160' + (this._charRef ? ' (with ref)' : '');
-          this._charFrames.push({ canvas: cnv, action });
+          if (st) st.textContent = '✓ Generated ' + N + ' frames — transparent 150×160 each' + (this._charRef ? ' (with ref)' : '');
           this._renderCharFrames();
         };
         img.src = 'data:image/png;base64,' + result.base64;

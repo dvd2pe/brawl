@@ -202,17 +202,15 @@
                     <p class="hint">Generate character animation frames. First frame becomes reference for consistency.</p>
                     <label>Character description <textarea id="aiCharDesc" rows="2" placeholder="A holy paladin with silver armor and glowing sword"></textarea></label>
                     <label>Action <select id="aiCharAction">
-                        <option value="walk-down-rest">Walk Down — Rest</option>
-                        <option value="walk-down-step1">Walk Down — Left Leg</option>
-                        <option value="walk-down-step2">Walk Down — Right Leg</option>
-                        <option value="walk-up-rest">Walk Up — Rest</option>
-                        <option value="walk-side-rest">Walk Side — Rest</option>
-                        <option value="attack-raise">Attack — Raise</option>
-                        <option value="attack-swing">Attack — Swing</option>
-                        <option value="hurt">Hurt</option>
+                        <option value="walk-down">Walk Down (12 frames)</option>
+                        <option value="walk-up">Walk Up (12 frames)</option>
+                        <option value="walk-side">Walk Side (12 frames)</option>
+                        <option value="attack">Attack (8 frames)</option>
+                        <option value="idle">Idle (4 frames)</option>
+                        <option value="hurt">Hurt (4 frames)</option>
                     </select></label>
                     <div class="row">
-                        <button id="aiCharGenBtn" class="primary">✨ Generate Frame</button>
+                        <button id="aiCharGenBtn" class="primary">✨ Generate Animation</button>
                         <button id="aiCharSetRef">↻ Set Ref</button>
                         <button id="aiCharClearRef">✕ Clear</button>
                     </div>
