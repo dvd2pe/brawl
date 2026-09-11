@@ -339,54 +339,59 @@ const App = {
     const el = this.$('aiCharFrames');
     if (!el) return;
     el.innerHTML = '';
-    // Show frames as a horizontal strip (like game spritesheets) — first frame animated
     if (this._charFrames.length === 0) return;
-    // Build a single canvas strip showing all frames side by side
+    // Build strip canvas (all frames side by side)
     const totalW = 150 * this._charFrames.length;
     const stripCv = document.createElement('canvas');
     stripCv.width = totalW; stripCv.height = 160;
     const sctx = stripCv.getContext('2d');
-    this._charFrames.forEach((f, i) => {
-      sctx.drawImage(f.canvas, i * 150, 0);
-    });
-    // Show the strip scaled down + animate first frame
+    this._charFrames.forEach((f, i) => sctx.drawImage(f.canvas, i * 150, 0));
+    // Display canvas (scaled down, no CSS background — solid fill each frame)
+    const displayW = Math.min(totalW, 600);
+    const displayH = Math.round(160 * (displayW / totalW));
     const displayCv = document.createElement('canvas');
-    const displayW = Math.min(totalW * 0.5, 600);
-    const displayH = 160 * (displayW / totalW);
     displayCv.width = displayW; displayCv.height = displayH;
-    displayCv.style.cssText = 'border-radius:6px; border:1px solid #34344a; image-rendering:pixelated; background: repeating-conic-gradient(#1e1e2a 0% 25%, #191924 0% 50%) 0 0 / 12px 12px';
+    displayCv.style.cssText = 'border-radius:6px; border:1px solid #34344a; image-rendering:pixelated';
     const dctx = displayCv.getContext('2d');
     dctx.imageSmoothingEnabled = false;
+    // Initial draw
+    dctx.fillStyle = '#1a1a26';
+    dctx.fillRect(0, 0, displayW, displayH);
     dctx.drawImage(stripCv, 0, 0, totalW, 160, 0, 0, displayW, displayH);
     el.appendChild(displayCv);
-    // Add frame labels
+    // Frame labels
     const labelsDiv = document.createElement('div');
     labelsDiv.style.cssText = 'display:flex; gap:0; font-size:10px; color:#888; margin-top:4px';
+    const labelW = displayW / this._charFrames.length;
     this._charFrames.forEach((f, i) => {
       const lbl = document.createElement('div');
-      lbl.style.cssText = 'width:' + (displayW / this._charFrames.length) + 'px; text-align:center';
-      lbl.textContent = 'F' + i + ': ' + f.action.replace(/-/g, ' ').slice(0, 15);
+      lbl.style.cssText = 'width:' + labelW + 'px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
+      lbl.textContent = 'F' + i + ': ' + f.action.replace(/-/g, ' ').slice(0, 12);
       labelsDiv.appendChild(lbl);
     });
     el.appendChild(labelsDiv);
-    // Animate: cycle through frames in the display canvas
+    // Animation: redraw strip + highlight current frame
     if (this._charAnimTimer) clearInterval(this._charAnimTimer);
+    if (this._charFrames.length < 2) {
+      const bs = this.$('aiCharBuildSheet');
+      if (bs) bs.style.display = 'none';
+      return;
+    }
     let animIdx = 0;
     this._charAnimTimer = setInterval(() => {
-      if (this._charFrames.length < 2) return;
       animIdx = (animIdx + 1) % this._charFrames.length;
-      dctx.clearRect(0, 0, displayW, displayH);
-      // Draw full strip
+      // Fill background (not clearRect — that would show CSS bg through transparent pixels)
+      dctx.fillStyle = '#1a1a26';
+      dctx.fillRect(0, 0, displayW, displayH);
+      // Redraw the full strip
       dctx.drawImage(stripCv, 0, 0, totalW, 160, 0, 0, displayW, displayH);
-      // Highlight current frame with border
-      const fw = displayW / this._charFrames.length;
+      // Highlight current frame
       dctx.strokeStyle = '#55c97a';
       dctx.lineWidth = 2;
-      dctx.strokeRect(animIdx * fw, 0, fw, displayH);
-    }, 200); // 5fps animation preview
-    // Show build button
+      dctx.strokeRect(animIdx * labelW, 0, labelW, displayH);
+    }, 200);
     const bs = this.$('aiCharBuildSheet');
-    if (bs) bs.style.display = this._charFrames.length >= 2 ? '' : 'none';
+    if (bs) bs.style.display = '';
   },
 
   refreshCustomList() {
