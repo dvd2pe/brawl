@@ -26,14 +26,48 @@ export async function POST(req: NextRequest) {
         '--cell-height', String(body.cellHeight || 160),
         '--description', String(body.description || 'A game character'),
       ];
+      
+      // sprite-gen requires a base image. If none provided, auto-generate one with z-ai-web-dev-sdk.
+      let basePath = '';
       if (body.baseImage) {
+        // User provided a base image
         const baseDir = path.join(runDir, 'input');
         fs.mkdirSync(baseDir, { recursive: true });
-        const basePath = path.join(baseDir, 'base.png');
+        basePath = path.join(baseDir, 'base.png');
         const baseData = body.baseImage.replace(/^data:image\/\w+;base64,/, '');
         fs.writeFileSync(basePath, Buffer.from(baseData, 'base64'));
-        args.push('--base-image', basePath);
+      } else {
+        // Auto-generate base image using z-ai-web-dev-sdk
+        const desc = String(body.description || 'A game character');
+        const baseScript = `
+import ZAI from 'z-ai-web-dev-sdk';
+import fs from 'fs';
+(async () => {
+  const zai = await ZAI.create();
+  const r = await zai.images.generations.create({
+    prompt: '${desc.replace(/'/g, "\\'")}, full body, facing camera, neutral idle pose, white background, clean digital illustration adventure game style',
+    size: '1024x1024',
+  });
+  fs.writeFileSync('${(runDir + '/base-raw.jpg').replace(/'/g, "\\'")}', Buffer.from(r.data[0].base64, 'base64'));
+})().catch(e => { console.error(e.message); process.exit(1); });
+`;
+        const scriptPath = path.join(runDir, 'gen-base.ts');
+        fs.mkdirSync(runDir, { recursive: true });
+        fs.writeFileSync(scriptPath, baseScript);
+        try {
+          await execAsync(`bun ${scriptPath}`, { timeout: 120000, cwd: '/home/z/my-project' });
+          // Convert JPEG to PNG
+          const jpgPath = path.join(runDir, 'base-raw.jpg');
+          basePath = path.join(runDir, 'base.png');
+          await execAsync(`python3 -c "from PIL import Image; Image.open('${jpgPath}').save('${basePath}')"`, { timeout: 10000 });
+          // Cleanup
+          try { fs.unlinkSync(jpgPath); fs.unlinkSync(scriptPath); } catch {}
+        } catch (e: any) {
+          return NextResponse.json({ success: false, error: 'Failed to generate base image: ' + e.message }, { status: 500 });
+        }
       }
+      args.push('--base-image', basePath);
+      
       if (body.style) args.push('--style', String(body.style));
       const { stdout } = await execAsync(args.join(' '), { timeout: 30000, env: { ...process.env, SPRITE_GEN_DEFAULT_PROVIDER: 'zai' } });
       const requestPath = path.join(runDir, 'sprite-request.json');
