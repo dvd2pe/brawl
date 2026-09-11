@@ -24,6 +24,7 @@
 
     <nav class="main-nav">
         <button class="nav-btn active" data-tab="tab-sprite">🖼️ Sprite</button>
+        <button class="nav-btn" data-tab="tab-spritegen">🤖 Sprite Gen</button>
         <button class="nav-btn" data-tab="tab-mappe">🗺️ Mappe</button>
         <button class="nav-btn" data-tab="tab-assets">📦 Asset &amp; Gioca</button>
     </nav>
@@ -67,6 +68,51 @@
                     Tip: se una sprite è grande (es. 400×100), è uno sheet di frame. Imposta "Frame W" = 100 per vedere i frame.
                     I gruppi <b>⚙</b> sono sprite concatenate a runtime (es. laser start+middle+end).<br>
                     <b>✂️ Editor frame</b>: apri lo sheet come lista di frame singoli — seleziona, sostituisci, aggiungi, rimuovi, riordina.
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ SPRITE GEN ============ -->
+        <section id="tab-spritegen" class="tab-content">
+            <div style="display:flex; gap:16px; height:100%;">
+                <!-- Left: pipeline controls -->
+                <aside class="panel" style="width:340px; display:flex; flex-direction:column; gap:12px; overflow:auto;">
+                    <h3>🤖 sprite-gen Pipeline</h3>
+                    <p class="hint">Uses the <b>sprite-gen</b> repo (aldegad/sprite-gen) with zai provider. Full pipeline: prepare → gen-set → extract → compose-atlas.</p>
+
+                    <label>Character ID <input id="sgCharId" placeholder="paladin" value="paladin"></label>
+                    <label>Description <textarea id="sgDesc" rows="2" placeholder="A holy paladin with silver armor and glowing sword">A holy paladin with silver armor and glowing sword</textarea></label>
+                    <label>Cell W <input id="sgCellW" type="number" value="150"></label>
+                    <label>Cell H <input id="sgCellH" type="number" value="160"></label>
+                    <label>States <input id="sgStates" placeholder="idle,attack" value="idle,attack"></label>
+
+                    <button id="sgPrepareBtn" class="primary">1️⃣ Prepare</button>
+                    <div id="sgPrepareResult" class="muted" style="font-size:11px"></div>
+
+                    <button id="sgGenBtn" class="primary" disabled>2️⃣ Generate (zai)</button>
+                    <div id="sgGenStatus" class="muted" style="font-size:11px"></div>
+
+                    <button id="sgExtractBtn" class="primary" disabled>3️⃣ Extract Frames</button>
+                    <div id="sgExtractResult" class="muted" style="font-size:11px"></div>
+
+                    <button id="sgComposeBtn" class="primary" disabled>4️⃣ Compose Atlas</button>
+                    <div id="sgComposeResult" class="muted" style="font-size:11px"></div>
+
+                    <hr style="border-color:#2c2c40; margin:8px 0;">
+                    <button id="sgRunAllBtn" class="primary">🚀 Run Full Pipeline</button>
+                    <div id="sgRunAllStatus" class="muted" style="font-size:11px"></div>
+
+                    <hr style="border-color:#2c2c40; margin:8px 0;">
+                    <h4>Existing Runs</h4>
+                    <div id="sgRunsList" class="validation" style="max-height:200px; overflow:auto"></div>
+                    <button id="sgRefreshRuns">↻ Refresh</button>
+                </aside>
+
+                <!-- Right: preview (frames + atlas like sprite tab) -->
+                <div class="panel" style="flex:1; display:flex; flex-direction:column; gap:8px; overflow:auto;">
+                    <div id="sgPreview" style="flex:1; overflow:auto; background:#0d0d14; border-radius:8px; padding:12px; min-height:300px;">
+                        <span class="muted">Run the pipeline to see generated frames and atlas here.</span>
+                    </div>
                 </div>
             </div>
         </section>
@@ -406,6 +452,7 @@
     <script src="js/frameEditor.js"></script>
     <script src="js/mapEditor.js"></script>
     <script src="js/aiGenerator.js"></script>
+    <script src="js/spriteGen.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

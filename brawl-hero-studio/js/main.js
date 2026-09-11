@@ -34,6 +34,7 @@ const App = {
     SpriteExplorer.init(document.getElementById('tab-sprite'));
     this.initMapTab();
     this.initAssetsTab();
+    this.initSpriteGenTab();
     this.populateToolThumbnails();
     PlayStudio.refreshStatus();
 
@@ -89,6 +90,163 @@ const App = {
     const $ = id => this.$(id);
     const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
     on('mapValidate', 'click', () => MapEditor.validate());
+  },
+
+  // ------------------------------------------------------------- Sprite Gen tab (uses sprite-gen repo)
+  initSpriteGenTab() {
+    const $ = id => this.$(id);
+    const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+    let sgRunDir = null;
+
+    const setProgress = (msg) => { const el = $('sgRunAllStatus'); if (el) el.textContent = msg; };
+
+    // 1. Prepare
+    on('sgPrepareBtn', 'click', async () => {
+      const charId = $('sgCharId')?.value.trim() || 'character';
+      const desc = $('sgDesc')?.value.trim() || 'A game character';
+      const cellW = +$('sgCellW')?.value || 150;
+      const cellH = +$('sgCellH')?.value || 160;
+      $('sgPrepareResult').textContent = '⏳ Preparing...';
+      try {
+        const r = await SpriteGen.prepare(charId, desc, cellW, cellH);
+        sgRunDir = r.runDir;
+        SpriteGen.runDir = sgRunDir;
+        $('sgPrepareResult').textContent = '✓ Prepared: ' + r.states.join(', ') + ' states';
+        $('sgGenBtn').disabled = false;
+        $('sgRunAllStatus').textContent = 'Prepared — click Generate';
+      } catch (e) { $('sgPrepareResult').textContent = '✗ ' + e.message; }
+    });
+
+    // 2. Generate
+    on('sgGenBtn', 'click', async () => {
+      if (!sgRunDir) { alert('Run Prepare first'); return; }
+      const states = $('sgStates')?.value.trim() || '';
+      $('sgGenStatus').textContent = '⏳ Generating (this takes 60-90s per state)...';
+      $('sgGenBtn').disabled = true;
+      try {
+        const r = await SpriteGen.genSet(sgRunDir, states);
+        $('sgGenStatus').textContent = '✓ Generated: ' + (r.rawImages || []).join(', ');
+        $('sgExtractBtn').disabled = false;
+        // Show raw images in preview
+        const prev = $('sgPreview');
+        if (prev && r.rawImages?.length) {
+          let html = '<h4 style="color:#6fb3ff; margin:8px 0 4px">Raw Generated Images</h4><div style="display:flex; gap:8px; flex-wrap:wrap">';
+          for (const name of r.rawImages) {
+            html += `<div style="text-align:center">
+              <img src="/api/sprite-gen?step=get-image&path=${encodeURIComponent(sgRunDir + '/raw/' + name + '.png')}" 
+                   style="max-width:200px; max-height:200px; border-radius:6px; border:1px solid #34344a" 
+                   onerror="this.style.opacity=0.3" />
+              <div style="font-size:10px; color:#666">${name}</div>
+            </div>`;
+          }
+          html += '</div>';
+          prev.innerHTML = html;
+        }
+      } catch (e) { $('sgGenStatus').textContent = '✗ ' + e.message; }
+      $('sgGenBtn').disabled = false;
+    });
+
+    // 3. Extract
+    on('sgExtractBtn', 'click', async () => {
+      if (!sgRunDir) { alert('Run Prepare first'); return; }
+      $('sgExtractResult').textContent = '⏳ Extracting frames...';
+      try {
+        const r = await SpriteGen.extract(sgRunDir);
+        const frameCount = r.frames.reduce((a, f) => a + f.files.length, 0);
+        $('sgExtractResult').textContent = '✓ Extracted: ' + frameCount + ' frames from ' + r.frames.length + ' states';
+        $('sgComposeBtn').disabled = false;
+        // Show extracted frames in preview
+        const prev = $('sgPreview');
+        if (prev && r.frames.length) SpriteGen.renderFrames(prev, r.frames, sgRunDir);
+      } catch (e) { $('sgExtractResult').textContent = '✗ ' + e.message; }
+    });
+
+    // 4. Compose Atlas
+    on('sgComposeBtn', 'click', async () => {
+      if (!sgRunDir) { alert('Run Prepare first'); return; }
+      $('sgComposeResult').textContent = '⏳ Composing atlas...';
+      try {
+        const r = await SpriteGen.composeAtlas(sgRunDir);
+        $('sgComposeResult').textContent = r.hasAtlas ? '✓ Atlas composed' : '⚠ Atlas not created (extract may have failed)';
+        // Show atlas in preview
+        const prev = $('sgPreview');
+        if (prev && r.hasAtlas) {
+          prev.innerHTML = '';
+          SpriteGen.renderAtlas(prev, sgRunDir, r.manifest);
+        }
+      } catch (e) { $('sgComposeResult').textContent = '✗ ' + e.message; }
+    });
+
+    // Run Full Pipeline
+    on('sgRunAllBtn', 'click', async () => {
+      const charId = $('sgCharId')?.value.trim() || 'character';
+      const desc = $('sgDesc')?.value.trim() || 'A game character';
+      const cellW = +$('sgCellW')?.value || 150;
+      const cellH = +$('sgCellH')?.value || 160;
+      const states = $('sgStates')?.value.trim() || '';
+      setProgress('1/4 Preparing...');
+      try {
+        const p = await SpriteGen.prepare(charId, desc, cellW, cellH);
+        sgRunDir = p.runDir; SpriteGen.runDir = sgRunDir;
+        setProgress('2/4 Generating (60-90s per state)...');
+        const g = await SpriteGen.genSet(sgRunDir, states);
+        setProgress('3/4 Extracting frames...');
+        const e = await SpriteGen.extract(sgRunDir);
+        setProgress('4/4 Composing atlas...');
+        const c = await SpriteGen.composeAtlas(sgRunDir);
+        setProgress('✓ Pipeline complete!');
+        $('sgGenBtn').disabled = false;
+        $('sgExtractBtn').disabled = false;
+        $('sgComposeBtn').disabled = false;
+        // Show results
+        const prev = $('sgPreview');
+        if (prev) {
+          if (c.hasAtlas) { prev.innerHTML = ''; SpriteGen.renderAtlas(prev, sgRunDir, c.manifest); }
+          else if (e.frames.length) SpriteGen.renderFrames(prev, e.frames, sgRunDir);
+        }
+        this.refreshRunsList();
+      } catch (e) { setProgress('✗ ' + e.message); }
+    });
+
+    // Refresh runs list
+    on('sgRefreshRuns', 'click', () => this.refreshRunsList());
+    this.refreshRunsList();
+  },
+
+  async refreshRunsList() {
+    const el = this.$('sgRunsList');
+    if (!el) return;
+    try {
+      const r = await SpriteGen.listRuns();
+      if (!r.runs.length) { el.innerHTML = '<span class="muted">no runs</span>'; return; }
+      el.innerHTML = r.runs.map(run =>
+        `<div style="padding:4px; border:1px solid #2c2c40; border-radius:4px; margin-bottom:4px; cursor:pointer" data-rundir="${run.dir}">
+          <b>${run.name}</b> ${run.hasAtlas ? '✓ atlas' : '⏳'} · ${run.frameCount} frames
+        </div>`
+      ).join('');
+      el.querySelectorAll('[data-rundir]').forEach(d => d.addEventListener('click', async () => {
+        sgRunDir = d.dataset.rundir;
+        SpriteGen.runDir = sgRunDir;
+        const status = await SpriteGen.status(sgRunDir);
+        const prev = this.$('sgPreview');
+        if (prev) {
+          if (status.hasAtlas) { prev.innerHTML = ''; SpriteGen.renderAtlas(prev, sgRunDir, null); }
+          else { prev.innerHTML = '<span class="muted">No atlas. Run the pipeline.</span>'; }
+          // Also try to show frames if available
+          if (status.frames?.length) {
+            const framesData = [];
+            const seen = new Set();
+            for (const f of status.frames) {
+              const state = f.split('/')[0];
+              if (!seen.has(state)) { seen.add(state); framesData.push({ state, files: status.frames.filter(x => x.startsWith(state + '/')).map(x => x.split('/')[1]) }); }
+            }
+            SpriteGen.renderFrames(prev, framesData, sgRunDir);
+          }
+        }
+        this.$('sgGenBtn').disabled = false;
+        this.$('sgExtractBtn').disabled = false;
+      }));
+    } catch (e) { el.innerHTML = '<span class="muted">error: ' + e.message + '</span>'; }
   },
 
   // ------------------------------------------------------------- Asset tab (null-safe, no try-catch blanket)
