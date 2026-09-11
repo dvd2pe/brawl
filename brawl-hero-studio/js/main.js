@@ -347,14 +347,54 @@ const App = {
       if (this._lastAICanvas) { const a = document.createElement('a'); a.href = this._lastAICanvas.toDataURL('image/png'); a.download = 'char-' + this._charFrames.length + '.png'; a.click(); }
     });
     on('aiCharBuildSheet', 'click', () => {
-      if (this._charFrames.length < 2) { alert('Need 2+ frames'); return; }
+      if (this._charFrames.length < 2) { alert('Generate animation first'); return; }
+      const N = this._charFrames.length;
       const sheet = document.createElement('canvas');
-      sheet.width = 150 * this._charFrames.length; sheet.height = 160;
+      sheet.width = 150 * N; sheet.height = 160;
       const ctx = sheet.getContext('2d');
-      this._charFrames.forEach((f, i) => ctx.drawImage(f.canvas, 0, 0, f.canvas.width, f.canvas.height, i * 150, 0, 150, 160));
-      PlayStudio.assignSkin('EntityPlayer', 'animSheet_walk_down', sheet, 150, 160);
-      PlayStudio.refreshStatus();
-      this.setStatus('✓ Sheet: ' + this._charFrames.length + ' frames → EntityPlayer skin', true);
+      this._charFrames.forEach((f, i) => ctx.drawImage(f.canvas, i * 150, 0));
+      const action = $('aiCharAction')?.value || 'walk-down';
+      const target = $('aiCharTarget')?.value || 'EntityPlayer';
+      
+      if (target === 'custom') {
+        // Save as custom sprite in the tree
+        const path = 'media/graphics/game/custom/ai-' + action + '-' + Date.now() + '.png';
+        const p = PlayStudio.patches();
+        p.additions = (p.additions || []).filter(a => a.path !== path);
+        p.additions.push({ path, data: sheet.toDataURL('image/png') });
+        PlayStudio.savePatches(p);
+        PlayStudio.additionCanvases.set(path, sheet);
+        GameData._additionCanvases[path] = sheet;
+        PlayStudio.repackTexture2();
+        this.refreshMySprites();
+        if (window.SpriteExplorer) SpriteExplorer.renderTree('');
+        this.setStatus('✓ Saved as custom sprite: ' + N + ' frames', true);
+      } else {
+        // Save as skin on the selected entity
+        const skinMap = {
+          'walk-down': 'animSheet_walk_down',
+          'walk-up': 'animSheet_walk_up',
+          'walk-side': 'animSheet_walk_side',
+          'attack': 'animSheet_attack_down',
+          'idle': 'animSheet_walk_down',
+          'hurt': 'animSheet_walk_down',
+        };
+        const prop = skinMap[action] || 'animSheet_walk_down';
+        PlayStudio.assignSkin(target, prop, sheet, 150, 160);
+        // Also save as addition for the tree
+        const path = 'media/graphics/game/custom/ai-' + target + '-' + action + '-' + Date.now() + '.png';
+        const p = PlayStudio.patches();
+        p.additions = (p.additions || []).filter(a => a.path !== path);
+        p.additions.push({ path, data: sheet.toDataURL('image/png') });
+        PlayStudio.savePatches(p);
+        PlayStudio.additionCanvases.set(path, sheet);
+        GameData._additionCanvases[path] = sheet;
+        PlayStudio.repackTexture2();
+        this.refreshMySprites();
+        if (window.SpriteExplorer) SpriteExplorer.renderTree('');
+        PlayStudio.refreshStatus();
+        this.setStatus('✓ Saved: ' + N + ' frames → ' + target + '.' + prop, true);
+      }
     });
 
     // --- Environment / Effect / UI generators (shared pattern)
@@ -390,56 +430,56 @@ const App = {
     if (!el) return;
     el.innerHTML = '';
     if (this._charFrames.length === 0) return;
-    // Build strip canvas (all frames side by side)
-    const totalW = 150 * this._charFrames.length;
+    const N = this._charFrames.length;
+    // Build strip canvas
     const stripCv = document.createElement('canvas');
-    stripCv.width = totalW; stripCv.height = 160;
+    stripCv.width = 150 * N; stripCv.height = 160;
     const sctx = stripCv.getContext('2d');
     this._charFrames.forEach((f, i) => sctx.drawImage(f.canvas, i * 150, 0));
-    // Display canvas (scaled down, no CSS background — solid fill each frame)
-    const displayW = Math.min(totalW, 600);
-    const displayH = Math.round(160 * (displayW / totalW));
+    // Display at FULL width of the panel (much bigger)
     const displayCv = document.createElement('canvas');
-    displayCv.width = displayW; displayCv.height = displayH;
-    displayCv.style.cssText = 'border-radius:6px; border:1px solid #34344a; image-rendering:pixelated';
+    displayCv.style.cssText = 'width:100%; max-width:900px; height:auto; border-radius:6px; border:1px solid #34344a; image-rendering:pixelated; display:block; margin-bottom:4px';
+    displayCv.width = 150 * N; displayCv.height = 160;
     const dctx = displayCv.getContext('2d');
     dctx.imageSmoothingEnabled = false;
-    // Initial draw
     dctx.fillStyle = '#1a1a26';
-    dctx.fillRect(0, 0, displayW, displayH);
-    dctx.drawImage(stripCv, 0, 0, totalW, 160, 0, 0, displayW, displayH);
+    dctx.fillRect(0, 0, 150*N, 160);
+    dctx.drawImage(stripCv, 0, 0);
     el.appendChild(displayCv);
     // Frame labels
     const labelsDiv = document.createElement('div');
-    labelsDiv.style.cssText = 'display:flex; gap:0; font-size:10px; color:#888; margin-top:4px';
-    const labelW = displayW / this._charFrames.length;
+    labelsDiv.style.cssText = 'display:flex; gap:0; font-size:10px; color:#666; margin-bottom:8px';
     this._charFrames.forEach((f, i) => {
       const lbl = document.createElement('div');
-      lbl.style.cssText = 'width:' + labelW + 'px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
-      lbl.textContent = 'F' + i + ': ' + f.action.replace(/-/g, ' ').slice(0, 12);
+      lbl.style.cssText = 'flex:1; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
+      lbl.textContent = 'F' + i;
       labelsDiv.appendChild(lbl);
     });
     el.appendChild(labelsDiv);
-    // Animation: redraw strip + highlight current frame
+    // Animation: cycle through frames
     if (this._charAnimTimer) clearInterval(this._charAnimTimer);
-    if (this._charFrames.length < 2) {
-      const bs = this.$('aiCharBuildSheet');
-      if (bs) bs.style.display = 'none';
-      return;
-    }
+    if (N < 2) { const bs = this.$('aiCharBuildSheet'); if (bs) bs.style.display = 'none'; return; }
     let animIdx = 0;
     this._charAnimTimer = setInterval(() => {
-      animIdx = (animIdx + 1) % this._charFrames.length;
-      // Fill background (not clearRect — that would show CSS bg through transparent pixels)
+      animIdx = (animIdx + 1) % N;
       dctx.fillStyle = '#1a1a26';
-      dctx.fillRect(0, 0, displayW, displayH);
-      // Redraw the full strip
-      dctx.drawImage(stripCv, 0, 0, totalW, 160, 0, 0, displayW, displayH);
-      // Highlight current frame
+      dctx.fillRect(0, 0, 150*N, 160);
+      dctx.drawImage(stripCv, 0, 0);
+      // Highlight current frame with a bright box
       dctx.strokeStyle = '#55c97a';
-      dctx.lineWidth = 2;
-      dctx.strokeRect(animIdx * labelW, 0, labelW, displayH);
-    }, 200);
+      dctx.lineWidth = 3;
+      dctx.strokeRect(animIdx * 150, 0, 150, 160);
+      // Dim other frames slightly
+      dctx.fillStyle = 'rgba(0,0,0,0.4)';
+      for (let i = 0; i < N; i++) {
+        if (i !== animIdx) dctx.fillRect(i * 150, 0, 150, 160);
+      }
+      // Redraw the highlighted frame on top (full brightness)
+      dctx.drawImage(stripCv, animIdx * 150, 0, 150, 160, animIdx * 150, 0, 150, 160);
+      dctx.strokeStyle = '#55c97a';
+      dctx.lineWidth = 3;
+      dctx.strokeRect(animIdx * 150, 0, 150, 160);
+    }, 150);
     const bs = this.$('aiCharBuildSheet');
     if (bs) bs.style.display = '';
   },

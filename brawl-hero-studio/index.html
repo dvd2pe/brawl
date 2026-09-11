@@ -221,7 +221,18 @@
                         <button id="aiCharDownload">⬇ PNG</button>
                     </div>
                     <div id="aiCharFrames" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px"></div>
-                    <button id="aiCharBuildSheet" class="primary" style="display:none; margin-top:8px">📋 Build Sheet from Frames</button>
+                    <div class="row" style="margin-top:8px">
+                        <label>Save as <select id="aiCharTarget">
+                            <option value="EntityPlayer" selected>Player character</option>
+                            <option value="EntitySlime">Slime enemy</option>
+                            <option value="EntityMushroom">Mushroom enemy</option>
+                            <option value="EntityBowldog">Bowldog enemy</option>
+                            <option value="EntityCactus">Cactus enemy</option>
+                            <option value="EntityDrone">Drone enemy</option>
+                            <option value="custom">Custom sprite (in tree)</option>
+                        </select></label>
+                        <button id="aiCharBuildSheet" class="primary" style="display:none">📋 Save Sheet</button>
+                    </div>
                 </div>
                 <div class="asset-panel">
                     <h3>🎭 Reskin Character</h3>
